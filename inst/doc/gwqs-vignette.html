@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="author" content="Stefano Renzetti, Paul Curtin, Allan C Just, Chris Gennings" />
+
+<meta name="date" content="2016-10-21" />
+
+<title>How to use gWQS package</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+</style>
+
+
+
+<link href="data:text/css;charset=utf-8,body%20%7B%0Abackground%2Dcolor%3A%20%23fff%3B%0Amargin%3A%201em%20auto%3B%0Amax%2Dwidth%3A%20700px%3B%0Aoverflow%3A%20visible%3B%0Apadding%2Dleft%3A%202em%3B%0Apadding%2Dright%3A%202em%3B%0Afont%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0Afont%2Dsize%3A%2014px%3B%0Aline%2Dheight%3A%201%2E35%3B%0A%7D%0A%23header%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0A%23TOC%20%7B%0Aclear%3A%20both%3B%0Amargin%3A%200%200%2010px%2010px%3B%0Apadding%3A%204px%3B%0Awidth%3A%20400px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Aborder%2Dradius%3A%205px%3B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Afont%2Dsize%3A%2013px%3B%0Aline%2Dheight%3A%201%2E3%3B%0A%7D%0A%23TOC%20%2Etoctitle%20%7B%0Afont%2Dweight%3A%20bold%3B%0Afont%2Dsize%3A%2015px%3B%0Amargin%2Dleft%3A%205px%3B%0A%7D%0A%23TOC%20ul%20%7B%0Apadding%2Dleft%3A%2040px%3B%0Amargin%2Dleft%3A%20%2D1%2E5em%3B%0Amargin%2Dtop%3A%205px%3B%0Amargin%2Dbottom%3A%205px%3B%0A%7D%0A%23TOC%20ul%20ul%20%7B%0Amargin%2Dleft%3A%20%2D2em%3B%0A%7D%0A%23TOC%20li%20%7B%0Aline%2Dheight%3A%2016px%3B%0A%7D%0Atable%20%7B%0Amargin%3A%201em%20auto%3B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dcolor%3A%20%23DDDDDD%3B%0Aborder%2Dstyle%3A%20outset%3B%0Aborder%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0Aborder%2Dwidth%3A%202px%3B%0Apadding%3A%205px%3B%0Aborder%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0Aborder%2Dwidth%3A%201px%3B%0Aborder%2Dstyle%3A%20inset%3B%0Aline%2Dheight%3A%2018px%3B%0Apadding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0Aborder%2Dleft%2Dstyle%3A%20none%3B%0Aborder%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Ap%20%7B%0Amargin%3A%200%2E5em%200%3B%0A%7D%0Ablockquote%20%7B%0Abackground%2Dcolor%3A%20%23f6f6f6%3B%0Apadding%3A%200%2E25em%200%2E75em%3B%0A%7D%0Ahr%20%7B%0Aborder%2Dstyle%3A%20solid%3B%0Aborder%3A%20none%3B%0Aborder%2Dtop%3A%201px%20solid%20%23777%3B%0Amargin%3A%2028px%200%3B%0A%7D%0Adl%20%7B%0Amargin%2Dleft%3A%200%3B%0A%7D%0Adl%20dd%20%7B%0Amargin%2Dbottom%3A%2013px%3B%0Amargin%2Dleft%3A%2013px%3B%0A%7D%0Adl%20dt%20%7B%0Afont%2Dweight%3A%20bold%3B%0A%7D%0Aul%20%7B%0Amargin%2Dtop%3A%200%3B%0A%7D%0Aul%20li%20%7B%0Alist%2Dstyle%3A%20circle%20outside%3B%0A%7D%0Aul%20ul%20%7B%0Amargin%2Dbottom%3A%200%3B%0A%7D%0Apre%2C%20code%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0Aborder%2Dradius%3A%203px%3B%0Acolor%3A%20%23333%3B%0Awhite%2Dspace%3A%20pre%2Dwrap%3B%20%0A%7D%0Apre%20%7B%0Aborder%2Dradius%3A%203px%3B%0Amargin%3A%205px%200px%2010px%200px%3B%0Apadding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0Abackground%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0Acode%20%7B%0Afont%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0Afont%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0Apadding%3A%202px%200px%3B%0A%7D%0Adiv%2Efigure%20%7B%0Atext%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0Abackground%2Dcolor%3A%20%23FFFFFF%3B%0Apadding%3A%202px%3B%0Aborder%3A%201px%20solid%20%23DDDDDD%3B%0Aborder%2Dradius%3A%203px%3B%0Aborder%3A%201px%20solid%20%23CCCCCC%3B%0Amargin%3A%200%205px%3B%0A%7D%0Ah1%20%7B%0Amargin%2Dtop%3A%200%3B%0Afont%2Dsize%3A%2035px%3B%0Aline%2Dheight%3A%2040px%3B%0A%7D%0Ah2%20%7B%0Aborder%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Apadding%2Dbottom%3A%202px%3B%0Afont%2Dsize%3A%20145%25%3B%0A%7D%0Ah3%20%7B%0Aborder%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0Apadding%2Dtop%3A%2010px%3B%0Afont%2Dsize%3A%20120%25%3B%0A%7D%0Ah4%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0Amargin%2Dleft%3A%208px%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Ah5%2C%20h6%20%7B%0Aborder%2Dbottom%3A%201px%20solid%20%23ccc%3B%0Afont%2Dsize%3A%20105%25%3B%0A%7D%0Aa%20%7B%0Acolor%3A%20%230033dd%3B%0Atext%2Ddecoration%3A%20none%3B%0A%7D%0Aa%3Ahover%20%7B%0Acolor%3A%20%236666ff%3B%20%7D%0Aa%3Avisited%20%7B%0Acolor%3A%20%23800080%3B%20%7D%0Aa%3Avisited%3Ahover%20%7B%0Acolor%3A%20%23BB00BB%3B%20%7D%0Aa%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0Aa%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0Atext%2Ddecoration%3A%20underline%3B%20%7D%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%20code%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">How to use gWQS package</h1>
+<h4 class="author"><em>Stefano Renzetti, Paul Curtin, Allan C Just, Chris Gennings</em></h4>
+<h4 class="date"><em>2016-10-21</em></h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Weighted Quantile Sum (WQS) regression is a statistical model for multivariate regression in high-dimensional datasets commonly encountered in environmental exposures, epi/genomics, and metabolomic studies, among others. The model constructs a weighted index estimating the mixed effect of all predictor variables on an outcome, which may then be used in a regression model with relevant covariates to test the association of the index with a dependent variable or outcome. The contribution of each individual predictor to the overall index effect may then be assessed by the relative strength of the weights the model assigns to each variable.</p>
+<p>The gWQS package extends WQS regression to applications with continuous and categorical outcomes. In practical terms, the primary outputs of an analysis will be the parameter estimates and significance tests for the overall index effect of predictor variables, and the estimated weights assigned to each predictor, which identify the relevant contribution of each variable to the relationship between the WQS index and the outcome variable.</p>
+<p>For additional theoretical background on WQS regression, see the references provided below.</p>
+</div>
+<div id="how-to-use-the-gwqs-package" class="section level2">
+<h2>How to use the <code>gWQS</code> package</h2>
+<div id="example-1" class="section level3">
+<h3>Example 1</h3>
+<p>The main function of the <code>gWQS</code> package is <code>gwqs</code>, which allows the implementation of Weighted Quantile Sum Regression for linear and a logistic regression. We created the <code>wqs_data</code> dataset (available once the package is installed and loaded) to show how to use this function. These data reflect 34 exposure concentrations simulated from a distribution of PCB exposures measured in subjects participating in the NHANES study (2001-2002). Additionally, an end-point meaure, simulated from a distribution of leukocyte telomere length (LTL), a biomarker of chronic disease, is provided as well (variable name: y), as well as simulated covariates, e.g. sex, and a dichotomous outcome variable (variable name: disease_state). This dataset can thus be used to test the <code>gWQS</code> package by analyzing the mixed effect of the 34 simulated PCBs on the continuous or binary outcomes, with adjustments for covariates.</p>
+<p>Here is an overview of the dataset:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="right">y</th>
+<th align="right">disease_state</th>
+<th align="right">sex</th>
+<th align="right">log_LBX074LA</th>
+<th align="right">log_LBX099LA</th>
+<th align="right">log_LBX105LA</th>
+<th align="right">log_LBX118LA</th>
+<th align="right">log_LBX138LA</th>
+<th align="right">log_LBX153LA</th>
+<th align="right">log_LBX156LA</th>
+<th align="right">log_LBX157LA</th>
+<th align="right">log_LBX167LA</th>
+<th align="right">log_LBX170LA</th>
+<th align="right">log_LBX180LA</th>
+<th align="right">log_LBX187LA</th>
+<th align="right">log_LBX189LA</th>
+<th align="right">log_LBX194LA</th>
+<th align="right">log_LBX196LA</th>
+<th align="right">log_LBX199LA</th>
+<th align="right">log_LBXD01LA</th>
+<th align="right">log_LBXD02LA</th>
+<th align="right">log_LBXD03LA</th>
+<th align="right">log_LBXD04LA</th>
+<th align="right">log_LBXD05LA</th>
+<th align="right">log_LBXD07LA</th>
+<th align="right">log_LBXF01LA</th>
+<th align="right">log_LBXF02LA</th>
+<th align="right">log_LBXF03LA</th>
+<th align="right">log_LBXF04LA</th>
+<th align="right">log_LBXF05LA</th>
+<th align="right">log_LBXF06LA</th>
+<th align="right">log_LBXF07LA</th>
+<th align="right">log_LBXF08LA</th>
+<th align="right">log_LBXF09LA</th>
+<th align="right">log_LBXPCBLA</th>
+<th align="right">log_LBXTCDLA</th>
+<th align="right">log_LBXHXCLA</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">-0.4224332</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0.0680716</td>
+<td align="right">-0.1608614</td>
+<td align="right">0.9648013</td>
+<td align="right">-0.1815684</td>
+<td align="right">0.7506797</td>
+<td align="right">0.9363278</td>
+<td align="right">-0.0364088</td>
+<td align="right">0.1971499</td>
+<td align="right">1.1192873</td>
+<td align="right">0.2972489</td>
+<td align="right">0.1920384</td>
+<td align="right">-0.5257044</td>
+<td align="right">-0.1659253</td>
+<td align="right">0.4017490</td>
+<td align="right">-0.0143133</td>
+<td align="right">0.8692975</td>
+<td align="right">0.0846309</td>
+<td align="right">0.0012511</td>
+<td align="right">-0.2847784</td>
+<td align="right">0.6327454</td>
+<td align="right">0.4078422</td>
+<td align="right">0.1661874</td>
+<td align="right">-1.2905580</td>
+<td align="right">-1.0359049</td>
+<td align="right">1.6893966</td>
+<td align="right">-0.1942655</td>
+<td align="right">0.4322813</td>
+<td align="right">-1.8049708</td>
+<td align="right">-0.7816081</td>
+<td align="right">0.2459645</td>
+<td align="right">-1.0917383</td>
+<td align="right">-0.3476487</td>
+<td align="right">-0.0358878</td>
+<td align="right">1.2711118</td>
+</tr>
+<tr class="even">
+<td align="right">0.7613784</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">0.5276676</td>
+<td align="right">1.4403102</td>
+<td align="right">0.7753093</td>
+<td align="right">0.1055764</td>
+<td align="right">-0.9015101</td>
+<td align="right">0.1677693</td>
+<td align="right">0.7643587</td>
+<td align="right">-0.6001477</td>
+<td align="right">0.6175614</td>
+<td align="right">-0.3577213</td>
+<td align="right">0.2879546</td>
+<td align="right">-0.1557095</td>
+<td align="right">-0.6755189</td>
+<td align="right">0.0519114</td>
+<td align="right">0.3351334</td>
+<td align="right">-1.1385368</td>
+<td align="right">0.5852100</td>
+<td align="right">-1.4539998</td>
+<td align="right">1.1116691</td>
+<td align="right">0.0767604</td>
+<td align="right">-0.0295292</td>
+<td align="right">-1.2578515</td>
+<td align="right">-0.0246641</td>
+<td align="right">0.5600564</td>
+<td align="right">0.1143720</td>
+<td align="right">1.1365974</td>
+<td align="right">0.8777775</td>
+<td align="right">-0.1214907</td>
+<td align="right">0.7902525</td>
+<td align="right">0.2255480</td>
+<td align="right">-1.0510728</td>
+<td align="right">0.5891812</td>
+<td align="right">-0.6304355</td>
+<td align="right">0.7265865</td>
+</tr>
+<tr class="odd">
+<td align="right">-2.1113324</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">-1.8650139</td>
+<td align="right">1.4885628</td>
+<td align="right">-1.5420050</td>
+<td align="right">-0.5412270</td>
+<td align="right">-1.3624492</td>
+<td align="right">-0.4177779</td>
+<td align="right">0.1414001</td>
+<td align="right">0.1333590</td>
+<td align="right">-0.9901708</td>
+<td align="right">0.1024100</td>
+<td align="right">-0.0622932</td>
+<td align="right">1.0824292</td>
+<td align="right">-0.6920183</td>
+<td align="right">-1.7204760</td>
+<td align="right">-1.2079225</td>
+<td align="right">0.3543356</td>
+<td align="right">-0.8116185</td>
+<td align="right">-0.8790250</td>
+<td align="right">0.4616429</td>
+<td align="right">-2.0101411</td>
+<td align="right">-1.2859585</td>
+<td align="right">0.8281122</td>
+<td align="right">0.0921212</td>
+<td align="right">-0.6980090</td>
+<td align="right">0.2987547</td>
+<td align="right">-0.0450820</td>
+<td align="right">0.4917081</td>
+<td align="right">0.3754392</td>
+<td align="right">-1.6193861</td>
+<td align="right">0.0812163</td>
+<td align="right">0.2236327</td>
+<td align="right">-0.5211774</td>
+<td align="right">-1.0174183</td>
+<td align="right">-0.4092153</td>
+</tr>
+<tr class="even">
+<td align="right">2.2222394</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">1.2585209</td>
+<td align="right">1.6110700</td>
+<td align="right">2.2069536</td>
+<td align="right">1.3286183</td>
+<td align="right">1.8871201</td>
+<td align="right">1.8393058</td>
+<td align="right">2.2751535</td>
+<td align="right">1.1307767</td>
+<td align="right">1.2204913</td>
+<td align="right">0.1958512</td>
+<td align="right">0.9461497</td>
+<td align="right">-0.0325942</td>
+<td align="right">-0.3940764</td>
+<td align="right">0.2984753</td>
+<td align="right">0.7837346</td>
+<td align="right">1.9352485</td>
+<td align="right">0.1973576</td>
+<td align="right">0.8376586</td>
+<td align="right">-1.2715081</td>
+<td align="right">-1.2577145</td>
+<td align="right">-0.5786619</td>
+<td align="right">0.6304414</td>
+<td align="right">1.3148279</td>
+<td align="right">0.2485757</td>
+<td align="right">-0.4723713</td>
+<td align="right">0.7557946</td>
+<td align="right">0.3307601</td>
+<td align="right">-0.0342781</td>
+<td align="right">-0.2875164</td>
+<td align="right">0.4176680</td>
+<td align="right">0.0977815</td>
+<td align="right">-1.1273511</td>
+<td align="right">1.0095760</td>
+<td align="right">0.6639172</td>
+</tr>
+<tr class="odd">
+<td align="right">-0.2190805</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">-1.0138713</td>
+<td align="right">-1.9903436</td>
+<td align="right">-0.6009229</td>
+<td align="right">-0.8907467</td>
+<td align="right">-0.4789443</td>
+<td align="right">-2.8190387</td>
+<td align="right">-0.0095402</td>
+<td align="right">-1.5477137</td>
+<td align="right">0.5180853</td>
+<td align="right">-2.1491031</td>
+<td align="right">-2.7951863</td>
+<td align="right">-1.5755779</td>
+<td align="right">-0.5270997</td>
+<td align="right">-0.2450904</td>
+<td align="right">-1.1242993</td>
+<td align="right">-0.6902691</td>
+<td align="right">-0.5791061</td>
+<td align="right">-1.9495504</td>
+<td align="right">-1.3426006</td>
+<td align="right">0.6178038</td>
+<td align="right">-1.2587666</td>
+<td align="right">-0.3310535</td>
+<td align="right">-1.5882632</td>
+<td align="right">-1.3967154</td>
+<td align="right">-1.2128921</td>
+<td align="right">-0.8581706</td>
+<td align="right">-0.6420270</td>
+<td align="right">-1.6946821</td>
+<td align="right">-0.2143440</td>
+<td align="right">-1.4720725</td>
+<td align="right">-0.5997930</td>
+<td align="right">-1.0896972</td>
+<td align="right">-0.3474791</td>
+<td align="right">-0.7175427</td>
+</tr>
+<tr class="even">
+<td align="right">-1.7282770</td>
+<td align="right">0</td>
+<td align="right">0</td>
+<td align="right">-0.9752573</td>
+<td align="right">-0.6864727</td>
+<td align="right">0.3389021</td>
+<td align="right">0.5984246</td>
+<td align="right">0.0270300</td>
+<td align="right">-0.4798327</td>
+<td align="right">-0.3867123</td>
+<td align="right">-1.0377681</td>
+<td align="right">-0.7329465</td>
+<td align="right">-0.7148301</td>
+<td align="right">0.4060471</td>
+<td align="right">-0.5076881</td>
+<td align="right">0.2215813</td>
+<td align="right">0.3212146</td>
+<td align="right">-0.1809994</td>
+<td align="right">1.4622912</td>
+<td align="right">0.0165252</td>
+<td align="right">-0.6026058</td>
+<td align="right">-0.0865081</td>
+<td align="right">-0.7574191</td>
+<td align="right">-0.0918236</td>
+<td align="right">-0.3804055</td>
+<td align="right">-0.0150627</td>
+<td align="right">0.5944020</td>
+<td align="right">0.4030363</td>
+<td align="right">-0.1233755</td>
+<td align="right">-0.7816779</td>
+<td align="right">-0.3795485</td>
+<td align="right">0.4316160</td>
+<td align="right">1.7915524</td>
+<td align="right">-0.9154308</td>
+<td align="right">0.2882417</td>
+<td align="right">0.6230951</td>
+<td align="right">1.4571064</td>
+</tr>
+<tr class="odd">
+<td align="right">0.4219639</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">-0.6225983</td>
+<td align="right">1.0113598</td>
+<td align="right">-0.2162429</td>
+<td align="right">0.7575008</td>
+<td align="right">-0.2571729</td>
+<td align="right">0.9804511</td>
+<td align="right">0.4458043</td>
+<td align="right">1.3962681</td>
+<td align="right">-0.1979610</td>
+<td align="right">0.1995122</td>
+<td align="right">1.4669089</td>
+<td align="right">1.0634414</td>
+<td align="right">0.8339600</td>
+<td align="right">1.5867141</td>
+<td align="right">0.7249490</td>
+<td align="right">0.7584681</td>
+<td align="right">0.2701363</td>
+<td align="right">0.9317193</td>
+<td align="right">0.0963273</td>
+<td align="right">0.3944993</td>
+<td align="right">0.6827900</td>
+<td align="right">-0.5437556</td>
+<td align="right">0.9504820</td>
+<td align="right">0.5142011</td>
+<td align="right">0.5474847</td>
+<td align="right">0.4452620</td>
+<td align="right">-0.4822166</td>
+<td align="right">0.7318831</td>
+<td align="right">0.0323481</td>
+<td align="right">-0.9661976</td>
+<td align="right">0.7297474</td>
+<td align="right">-0.1620114</td>
+<td align="right">0.5754746</td>
+<td align="right">0.9274046</td>
+</tr>
+<tr class="even">
+<td align="right">-0.4762419</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">-0.1801051</td>
+<td align="right">-0.5805092</td>
+<td align="right">-0.8038376</td>
+<td align="right">-0.7786034</td>
+<td align="right">-1.5457539</td>
+<td align="right">-1.3117169</td>
+<td align="right">-0.9734300</td>
+<td align="right">-0.0261900</td>
+<td align="right">0.5308421</td>
+<td align="right">-0.2485865</td>
+<td align="right">0.2103118</td>
+<td align="right">-0.0912344</td>
+<td align="right">-0.1011264</td>
+<td align="right">-0.4217051</td>
+<td align="right">0.4682131</td>
+<td align="right">-0.9008740</td>
+<td align="right">-0.4390236</td>
+<td align="right">-1.0384994</td>
+<td align="right">-1.0510064</td>
+<td align="right">-0.1617107</td>
+<td align="right">-1.5014766</td>
+<td align="right">-1.1384429</td>
+<td align="right">1.7696655</td>
+<td align="right">1.9844850</td>
+<td align="right">-0.4584083</td>
+<td align="right">-1.8996102</td>
+<td align="right">-1.0736679</td>
+<td align="right">1.2719959</td>
+<td align="right">1.2918048</td>
+<td align="right">-0.0684242</td>
+<td align="right">0.4754351</td>
+<td align="right">-1.0453685</td>
+<td align="right">0.0445513</td>
+<td align="right">-1.8944198</td>
+</tr>
+<tr class="odd">
+<td align="right">-0.5126990</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">0.4502187</td>
+<td align="right">0.7892304</td>
+<td align="right">0.7107290</td>
+<td align="right">0.2754549</td>
+<td align="right">0.0613806</td>
+<td align="right">0.3399312</td>
+<td align="right">1.0176518</td>
+<td align="right">1.1807174</td>
+<td align="right">1.2440091</td>
+<td align="right">1.5589123</td>
+<td align="right">-0.8405278</td>
+<td align="right">-0.2002233</td>
+<td align="right">0.2201809</td>
+<td align="right">0.2284441</td>
+<td align="right">-0.1742271</td>
+<td align="right">-0.1887278</td>
+<td align="right">0.3027553</td>
+<td align="right">-0.3797491</td>
+<td align="right">-0.4089264</td>
+<td align="right">-0.5428011</td>
+<td align="right">1.2964970</td>
+<td align="right">-0.2374201</td>
+<td align="right">0.1206623</td>
+<td align="right">0.4179228</td>
+<td align="right">1.3594435</td>
+<td align="right">1.6920543</td>
+<td align="right">-0.3431321</td>
+<td align="right">-0.2684203</td>
+<td align="right">0.9664860</td>
+<td align="right">-0.0108648</td>
+<td align="right">-0.9556556</td>
+<td align="right">2.0269212</td>
+<td align="right">0.0600171</td>
+<td align="right">0.4541168</td>
+</tr>
+<tr class="even">
+<td align="right">-0.8479847</td>
+<td align="right">1</td>
+<td align="right">0</td>
+<td align="right">-0.4461221</td>
+<td align="right">-1.0556249</td>
+<td align="right">1.0676569</td>
+<td align="right">0.0681564</td>
+<td align="right">-0.9582167</td>
+<td align="right">-0.3967903</td>
+<td align="right">0.0196100</td>
+<td align="right">0.0467119</td>
+<td align="right">0.5172333</td>
+<td align="right">0.2781621</td>
+<td align="right">0.1674821</td>
+<td align="right">1.1879319</td>
+<td align="right">-1.0221745</td>
+<td align="right">-1.3879976</td>
+<td align="right">-0.7295127</td>
+<td align="right">-1.7526492</td>
+<td align="right">-0.7668207</td>
+<td align="right">0.5923798</td>
+<td align="right">1.0463819</td>
+<td align="right">0.9856947</td>
+<td align="right">-1.1673793</td>
+<td align="right">-0.7855519</td>
+<td align="right">-0.8638427</td>
+<td align="right">-0.7379376</td>
+<td align="right">-0.0984674</td>
+<td align="right">-0.7446359</td>
+<td align="right">-0.2253229</td>
+<td align="right">-0.9085362</td>
+<td align="right">-0.8710364</td>
+<td align="right">1.6918778</td>
+<td align="right">-0.8597897</td>
+<td align="right">-0.4343029</td>
+<td align="right">0.4885121</td>
+<td align="right">-1.5592026</td>
+</tr>
+</tbody>
+</table>
+<p>WQS with a continuous outcome: This script calls a wqs model for a continuous outcome using the function <code>gwqs</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># we save the names of the mixture variables in the variable &quot;mix_name&quot;</span>
+toxic_chems =<span class="st"> </span><span class="kw">c</span>(<span class="st">&quot;log_LBX074LA&quot;</span>, <span class="st">&quot;log_LBX099LA&quot;</span>, <span class="st">&quot;log_LBX105LA&quot;</span>, <span class="st">&quot;log_LBX118LA&quot;</span>, 
+                <span class="st">&quot;log_LBX138LA&quot;</span>, <span class="st">&quot;log_LBX153LA&quot;</span>, <span class="st">&quot;log_LBX156LA&quot;</span>, <span class="st">&quot;log_LBX157LA&quot;</span>, 
+                <span class="st">&quot;log_LBX167LA&quot;</span>, <span class="st">&quot;log_LBX170LA&quot;</span>, <span class="st">&quot;log_LBX180LA&quot;</span>, <span class="st">&quot;log_LBX187LA&quot;</span>, 
+                <span class="st">&quot;log_LBX189LA&quot;</span>, <span class="st">&quot;log_LBX194LA&quot;</span>, <span class="st">&quot;log_LBX196LA&quot;</span>, <span class="st">&quot;log_LBX199LA&quot;</span>, 
+                <span class="st">&quot;log_LBXD01LA&quot;</span>, <span class="st">&quot;log_LBXD02LA&quot;</span>, <span class="st">&quot;log_LBXD03LA&quot;</span>, <span class="st">&quot;log_LBXD04LA&quot;</span>, 
+                <span class="st">&quot;log_LBXD05LA&quot;</span>, <span class="st">&quot;log_LBXD07LA&quot;</span>, <span class="st">&quot;log_LBXF01LA&quot;</span>, <span class="st">&quot;log_LBXF02LA&quot;</span>, 
+                <span class="st">&quot;log_LBXF03LA&quot;</span>, <span class="st">&quot;log_LBXF04LA&quot;</span>, <span class="st">&quot;log_LBXF05LA&quot;</span>, <span class="st">&quot;log_LBXF06LA&quot;</span>, 
+                <span class="st">&quot;log_LBXF07LA&quot;</span>, <span class="st">&quot;log_LBXF08LA&quot;</span>, <span class="st">&quot;log_LBXF09LA&quot;</span>, <span class="st">&quot;log_LBXPCBLA&quot;</span>, 
+                <span class="st">&quot;log_LBXTCDLA&quot;</span>, <span class="st">&quot;log_LBXHXCLA&quot;</span>)
+
+<span class="co"># we run the model and save the results in the variable &quot;results&quot;</span>
+results =<span class="st"> </span><span class="kw">gwqs</span>(y ~<span class="st"> </span><span class="ot">NULL</span>, <span class="dt">mix_name =</span> toxic_chems, <span class="dt">data =</span> wqs_data, <span class="dt">q =</span> <span class="dv">4</span>, <span class="dt">validation =</span> <span class="fl">0.6</span>, 
+               <span class="dt">valid_var =</span> <span class="ot">NULL</span>, <span class="dt">b =</span> <span class="dv">3</span>, <span class="dt">b1_pos =</span> T, <span class="dt">family =</span> <span class="st">&quot;gaussian&quot;</span>, <span class="dt">seed =</span> <span class="dv">2016</span>, 
+               <span class="dt">wqs2 =</span> T, <span class="dt">plots =</span> T, <span class="dt">tables =</span> T)</code></pre></div>
+<p><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAHgCAMAAABKCk6nAAAAxlBMVEUAAAAAADoAAGYAOjoAOpAAZmYAZpAAZrYAq/wAs/IAuOUAvNYAv8QAwIcAwLIAwZ0po/86AAA6ADo6AGY6OgA6OpA6ZmY6kJA6kLY6kNtmAABmADpmAGZmOpBmZmZmkJBmtv9zmP9/f3+QOgCQOjqQOmaQ2/+cjf+2ZgC2kDq225C2/7a2/9u2//+6gv/Sd//bkDrbtrbb25Db///kbfXl5eXxZuj6Ytn6+vr9b4f/Ycf/Y7T/aJ7/tmb/25D//7b//9v///+xEKWPAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAYZklEQVR4nO2dCZvbthGGZcete7fO1azttttu4m6SulWyTW95l///T5UgQBLgIWBIADMAv3nyZFdaSSPxNXjg1WBODaLqOHG/AUTaAODKA4ArDwCuPAC48gDgyiMf4D8hskZ+wJPbP2x4jX9teM5B8/ADPiFixtrmZgT8b0S8AODKIwzwh0/eL7Ix9394pfYFz9415xcPTXP/Ut8+3TZPd6fn7SPaH6cb60Uu7UMBOE/EAdz9uDx//3R323z47GF4+P1L9V9z/+Lhw8fvhnuf7n7/EoAzRUTAj2/eNZcXD/e3w8PVPe3v6of9Ih8++cZ+PQBOGeGA2/2u2rO2P37cjtMFwBc1LO//8NnDgFL9bOk6j2rj3I7rGyvjD24AcMw4TbbuD2uAH1/fqp2w+nE+TQHrY66C1u6K+9sve8CXF1+rA7I9ri/qYI0RnCGCR/AA66FRkBdGcMf2rDBPRvClva89r+rvdV8CgNNGMGCFpT2HOusfS4AVtMe33759PwOsn2PuVafU3fgG4BwRcQSrXe/5Rh1hJydZ6uYI2BruAJw+ggFfPQZ3P9rB7Z5VjZdJN+qp5t57PXbH0ywAThlbzqJ/9KYfffps6kb/UJfBNx3o73vAj6+HiY5b8+DfmidfnvdXSpiLThpBgN14fPNu/Y/0AOB4QdjcK49Vx85x8EWJGeD/ITZGBMDtAbjdU5sL32dRRjIAR4utgDe5BnU4NrJB3XFrvYpHNnBvpnIjFeAl1/D4+qY/i+5OwJ+FywbuzVRuJAU8dQ3qmkpfB7sTHX7ZwL2Zyo09gMmuwVwPm1PudhQHywbuzVRuzMzCQqwAJrmG7m4zZg1gMwvSNAGygXszlRs7RjDdNTiAz8/HGWqvbODeTOXGDsB012Dvos/PhoEdIBu4N1O5kXQET13DeJLVjd+l8Q7AkWMHYLJrsC6TDMxg2cC9mcqNOGfRftfQ3Vb/CrRsuO/2ybeQDeljI2A3IrsGlK7kzXMdcALXUP0ILgpwAtcwB/zfqqIIwDsrG8xRPFQ2cCOJG1UA9lQ2tL9YEx1e2cCNJG7UA3i1sqFl/5E9gn2ygRtJ3CgG8PbKhubpq29swD7ZwI0kboQIgJyRoLKhOd/Yx2CvbOBGEjdKGcE7Khsef/dgA/bKBm4kcaMUwDsqG8xROVg2cCOJG6UA3l7Z8O1rfdEULBu4kcSNUgDvqWxwroP9soEbSdwoBfCeyobhBU5HlA0lAHYjcWWDsA1SWx4BlQ2Fx/TzlQU4R2XDf4qOIgHvkw2X7tZNsGzgRrQvqgTslQ1WfbBfNnAj2hf1Ar4iG7pL52DZwI1oXxQLeIds6K6Rw2UDN6J9IU0uTCOFbNCTm8GygRvRvih1BO+QDeaOYNnAjWhflAp4h2zodsqEygZuRPuiVMDbZcN7M/EcLBu4Ee2LUgHvkQ16yAfLBm5E+6JUwHtkgz6TPops2LjhnYBsmEQFEiBXHsiGkKB8vrIA55AN/xQf9QEm2ob+L7pZA1U2cOPzx/EAT2yDOr1S+3HdrKFpaLKBG58/Dgp4tA3tjvzzYR5aBUk2cOPzR52ACbah+c75JjRRNnDj84d0oXAtVgFTbIP5i2nWQJUN3Pj8UeUIptgGc5dp1kCVDdz4/FElYIptaPoRbB5Lkw3c+PxRJWCKbWjGr7p3gGmygRufP6oETLEN/V26WQNVNnDj80eVgCm24cGa6LitUTYk2PBOMDeIjmsbIBuy5vEBjm8bChjBw3s7AOD4tmEG+B/SonrAmwobrJ4NTvlo45UN3DxncXjAS4UN1mKkDXEZJW6eswDgpcIGazlh4jJK3DxncQjAe3o2EJdR4uY5i5LdwixS9GwgLqPEzXMWRxjB9MKGETB1GSVunrM4AuA9PRuoyyhx85zFEQDTCxuGkyzyMkrcPGdxBMB7ejY0znWwXzZw85zFEQDv6dkwvsKpUNkwvLdKAbuBng1F50HPhkk47616wFl6NvxdUhwE8MbKhsupP3A/e2e9hkc2cDN1AoDHH7PKBrND7069CZUN3EydAODxx6yyoWns+Y5g2cDN1IkDAaZXNqhod9pqWF/G/sEz2TB5BwAs8FuVy5UN6g/PulWUTlbpykw2THSHMMAsyidhxKxsUNH9m7ixj8Fe2cDN1InjjOANlQ0qZsdgv2zgZurEcQBvqGxomgXAftnAzdSJ4wDeUNmg5rzaiyY1Rz3uov2ygZupE8cBvKWy4XzqZIOZ6ChTNjjvrVrAbqCyoeA8h65s8L7XAwDOUNnwN644MOCNskHd/+KBuowSAMsDvCwb9ORlF5RllABYKOC5bBiuhUjLKAEw92VSqGx4+rLfFV9dRmnyDgBY4ETHsmx4fPOpPg+7vozSZDacETDL7H/miCkb1B2Pb/sVlIJlAx9g7z//mkfwdtlAXUYJgAuTDdRllABY3jH4qmygLqMEwNxn0VTZUMwySt6tUy1gNyAbCs5zMNlAfK8HAJxBNvw1XwCwie2yQd2hWzcEywYAlgd4WTZ0X6d82bduCJYNACwU8Ew2mIsmc04WLBsAmPsyidKzYfp1ysYvGwBY3kTHimzQjzWtG4JlQ07ALPP9rBG1sqEF/8XdrWndECwbcgIO+1c/RM0jeLtsMM8Mlg0AXJJsMM8cAftlAwDLOwYvywb1m7oo1q0bgmUDAHOfRQfLhstpmOi4lSkbiBuxWsBuQDYUnKd42RCcV9iGz5VHgGz4854AYE8I6NkAwNIAT1RDd9tZjFQvqhQqGwBYJOArPRtG9WCedl02AHBpPRsm7aJ9sgGApa0X7evZ4B6DvbJhH2CWGfyCIkHPhglgr2zACC6sZ0PjAPbLBgAuq2fD+8YB7JcNACztGDxRDfPLJBuwXzYAMHo2YKpycx70bKg8T9k9Gyh5hW34XHkE9Gz44+YAYH/ErmwwB257jQ6fbABgeYDXKhu6Zg2mwCFYNgCwUMBrlQ3u99/9sgGAub+TFbyM0tiswQbskw0ALO9blSs9G3SzBvOUYNmwAzDL9H1ZEbOywTRrMAUOwbIBI7iUyoZRNpB6NgBwKZUNFmDzAo0z2t2MfQCwwGPwcmWDadZgChyCZQMAc59FB1c2mKfoAodg2QDAdVc2YC4alQ37yJoQtuFz5RFQ2fAbegAwj2xwDsXBsgGA5QFelg2ucwiWDQAsFPC8Z8PMOZgnXZcNAMx9mRTcIHrmHLrwyQYAljfRsdYg2nYOwbJhC2CWefsiI3KDaMs5BMsGjOBSZEPjTEkHywYALkU2NEuA/bIBgOUdg5dlQ+M4h2DZAMDcZ9HBssGd6AiVDQAM2YC56M15ipMN3XMq2PC58giQDT+hBAAT86To2UCsbABgeYDXKhu6iyZqZQMACwUcq7IBgLkvkzb0bKBUNgCwvImOqz0bqJUNNMAsM/YFR4KeDdTKBozggmTDlsoGAC5INliPCJYNACzvGLwsG0xJA7WyAYC5z6KpPRuIlQ0ADNmAuejNeeTLhqXXqGDD58ojQDb89GoA8L48UWWD6dmg/mx9bdYnGwBYHuCVygazGOnFuXDyygYAFgp4Jhv65YT1JVGwbABg7sskomx4+tLtAO6TDQAsb6JjWTYYwI9vPrWrC72ywQOYZYq+nogpG3pP2N7/+Da8sgEjuBTZME5ckmQDAJciG8aeDaTKBgCWdwxeqWzQl0lq4qvveBciGwCY+yw6WDaYng1n9bdw2QDAx5YNS69RwYbPlUe4bFh5jQo2fK48AmTDz9YDgHfniV3ZcOouq9QkSLBsAGB5gFdkw8WcMben1x+P34v2yQYAFgp4voySvhYaVxTun3RdNgAw92VScM8GxzIEywYAljfRsVLZoC3D5cXXqpVhsGy4Bphlfr6qiCobtGW4tHe151XBsgEjuBTZoML8m3gaSlf8sgGAS5ENTTNYhhGwXzYAsLxj8LJsMJZBnVJdCMsoATD3WXSwbNCWodsr34bLBgA+sGxYeY0KNnyuPKJlw+prVLDhc+URIBt+vhYAHCHPHDBRNJiz5E/eD+JBPeKl/Toe2QDAsgBPRMMAuBcPaof+dEdYRgmABQIeRcMA2NzWF822TfLJBgDOD5ggGkbA+vZwRhYsGwA4O2CKaDC3u6pCdXvwCsGyYR0wy+x8ZbEImCIarBHc3Z4B9soGjODsI5giGkbA+vZ0F+2XDQCcHTBFNIyAz2YpUvWE9v/BsgGAZR2DJ6JhANyLh3N7evZ09yK8sgGAOc+ivaLhewP4L4N4uOg9crBsAGDOqcq4osHO2AfmotkAxxcNdsY+aGh1VLDhc+W5OoKjiwY7Yx+nX8wDgKPliVnZcDFTIHo1pWDZAMDyAK9UNug7TZlwsGwAYKGA55UNZgJEF/oHywYA5v5OVnCDaH2Z5FwgN37ZAMDyvlW51iC6m9icAPbKhiXALPPyVUbcBtHd/yeAvbIBI7icyoZzf0JNWUYJgMupbOiOte5Jll82ALC8Y/ByZUM/1J3LJL9sAGDus+jwZZTMMnevScsoAfABKxs8r1HBhs+VR1plQ9hrVLDhc+URUNnwKysAOHaevZUNHw3o+4KGV2YOJFg2ALAswDPRMNwzFjSoHtHBsgGABQK2REOP1CloGAvA/bIBgEVXNph7Jt+WpcgGAJb1rcqZaNCA3e+7j2t0+GWDA5hlQr7m2F3Z4AXslQ0YwaIrG3y7aL9sAGDRlQ3OSdZQ0DCeZPllAwDLOgbPRIO5xy5osC6T/LIBgEVXNvQVwm5Bwy2hsgGAj1TZEPYaFWz4XHmkVTaEvUYFGz5XHgGVDb+2AoBj51kCTKxrGPTCxgbRACwN8EQ3DOfNGxtEA7BIwNOFlNRl1bYG0QDMAZi8kJKZu9rQIBqAGQCTFlKyZ583NIh2ALNMyNccK4ApumEKmNogGiOYYQTTF1Iad9FNQ5MNAMwAmKIbZidZDa1BNABLOwZPdMP0MonaIBqAec+i/Qsp9XphY4NoAOatbIitGzAXnTXPdcApdMMqYMJrVLDhc+XxjOAEumEG+Jc6ADhJnpDis7gBwFnzLALepJPa06zRJlkzWV6bBMDiAC/pJBX6Mqm7trIqG3w2CYBlAp7qJGftBruywWeTAJgFMFknDauvqHF9sYT/1CZNZsMHwCxz8dXHGmB6X46XPWB1KB6/bDm3SZN/YhjBLCOYrpOGEaxmLa1jsNcmATAHYLpOGgC7x2C/TQJgmSN4qpNWTrL8NgmAOQDT+3I0/WWSkhBnQgdwAGY+iw7sy9EMNslMdITaJMxFM09VRtZJM8AbXqOCDZ8rjwdwAp0EwFnz+EZwfJ0EwFnzJJINlNKVsDfqRAUbPleeBLKBWroS9kadqGDD58qTQDZQS1fC3qgTFWz4XHlSyAZP6cpkNhySIWkkkA2+0pXJPzGMYKFTlauygVq6QvpYOirY8LnyJJAN6leKbKB8KhMVbPhceRLIBvNrsGygfCoTFWz4XHkSyAZq6QrhQ/VRwYbPlSeFbCCWrlA/WVPFhs+VB7Kh8jyQDZXngWyoPE+CdbJMI3DIBhF5UqyT1bg9GyAbOPOkWCdLT4JANojIk2CdrMZZZRiygTcSrJNlNQJvGsgG5jwJ1sky90A2iMiTZJ2ssZUDZAN3niTrZHWHXMgGEXkSrJNlxjxkg4g8KdbJMk3fIRsk5BGwTtaG16hgw+fKI2CdrA2vUcGGz5VHwDpZG16jgg2fK88yYKJu6P+iSxqUbaAsoxT2Rp2oYMPnyrMN8EQ3qNMrtSM3JQ16vw7ZICLPDsBWF/Dz6fPh+rcLyjJKYW/UiQo2fK4864ApXcC/666JTUmDijNhGSWWOfjDxCpgWhdw853oT/WZ2IdXqGyQkmcVMEU3mLtMSYO6eSEsoxT+mYaoYMPnyrMKmNYF3BmvDSob5OTZMYLtLuDrgCEbePNsOwZPdIO5y5Q0oLJBUp6Qs+iALuCauS5pQGWDpDwhK77H1Q0AnDWPD3B83QDAWfN4R3B03QDAWfOkWkbJ+l40ZANnnkQ9G1qmkA0i8iRYRslMkUA2iMiTYBkl9Ws7iiEbRESKng2NY5MgG1jzJFhGqf3t/HxceweygTVPkmWUzs+GkiXIBuY8KZZROncTI5ANIvIkWEbJwIRsEJEnwTJK93raA7JBRB4so1R5HiyjVHkeLKNUeZ4p4E2e4VlfTfjSegRkg4g8VMCLnkERVDvypzurHByyQUSeTYCnnqGlrS+W20P28AjIBhF5lgCTPUMLeDgTGx4B2SAiFgDTl1BqHz3ohOERkA0i8iwAJnmG/pRqBNw/ArJBRJ4FwFs8QzPZRY8+GLKBN8+mETz3DOaRA1dUNkjJQz0Gr3mGThE+3fWefxT+kA28ea6fRYd7hqZbJnqY6EBlg5Q816cqYy+hZGfsA4CZAKdYQsnO2AcAc43gBEso2Rn7AGB534v2VDaYIzlkg4Q8KRpE60WVIBtE5EnRIFovqgTZICJPisoGvagSZIOISFPZYAOGbGDNk6aywQYM2cCaJ02DaAswZANvnjQNoi3AkA28eRJUNjQOYMgG3jwpGkQPLwDZwJ8HlQ2V50FlQ+V5UNlQeZ44PRucztANZIOgPHF6Njidodv/30M2SMkTpWeD2xm6pfwRZIOUPFF6NoxTWN0+++mrbyAbpESUng0DYD2reb6BbBCTJ0rPhgFw94fH3zm6ELKBNU+Ung0D4G55f/MVAMgGEXmi9GxwOkM/vjaLsEA2SMgTp2eD0xm6gWwQlCdOzwanM/T4fMgG/jzo2VB5HvRsqDwPejZUnid2g2hV7K9nQSAbROSJ2SC6O+PWu3MsoyQlT8wG0eOUtEIN2SAiT9QG0e3j9Kyz2nVDNoiImA2i1bRkx7eb8IBsEJEnZoPox9c3+hisz7ggGyTkidkg2nUOkA0i8sRsED0Avr+ZPhaygStPzAbRamr6/Py9GfGQDSLyRG0QbZ5ikEM2SMgD2VB5HsiGyvNANlSeJ7Zs0DMaqGwQkyeubOgvmlDZICZPEtmAygY5eWLKhh4wKhsERUzZ0D8WlQ2C8sSUDQr8F3e3qGyQlCembFDR/ptAZYOkPDFlg/75LSobJOWJKRtMjUODygZBeaLKhsvJnuiAbJCQh182CNsgteWBbKg8D2RD5XlS9GzQzgGyQUSeBD0bjHOAbBCRJ0HPBnPFBNkgIk+Cng1TwJANnJGgZ4N5DmSDiDwpejZo5wDZICJPmp4N1i4asoE3T5qeDf0rNM5wdzP2AcAsgHf0bDDOAbJBRJ4UPRu0c4BsEJGHv2eDsA1SWx70bKg8D3o2VJ5nCfAm16AOx0Y2XLq/QjaIyLMF8JJrUIbBnEWb3Tpkg4g8mwFPXYO6phqvgyEbpORZA0x2DaNlUI8xF8ldQDZwxgpgaseGbumkAfCHV9YxGLKBNc8KYLprsAE7SxlCNrDmWQFMdw3uLhqyQUqezSN46hrWTrIgG3jzbDkGL7kG6zJJzXyN39SCbODN4z+L9ruGV/o7lYNsOKu/QjbIyOOXDZFdA2RD3jzXASdwDRjBefN4RnB81wDAefPEbBDdL6OEygZBeWI2iDYlDahskJQnZoPolS++QzZw5onZIBqVDQIjZoNo81hUNkjKE7VBtC5pQGWDpDxxG0Q3kA3S8sRtEG0/ArJBRJ6YDaLNb6hskJQnaoNos4wSKhsE5cEySpXnwTJKlefBMkqV50nQINqoB8gGEXlSNIg2BQ6QDRLyJOjZYKkH8yTIBr48CRpEQzZIigQNoieAIRtY8yRoED0BDNnAmidBg2gXMGQDb54EDaLdkyzIBt48KRpEO5dJkA28eZI0iH6NygYxeSAbKs8D2VB5HsiGyvOk6NmAZZQE5UnQswHLKEnKk6Bng/kVskFEngQ9G9Sv15ZRmrwDAGYBvKNnQ+NZRmmiO2CTkkaKng0NllGSkwc9GyrPk6hnA5ZRkpInQc8GLKMkKU+Kng1YRklQHvRsqDwPQ88GRNa4DjjFOkoIjthyJEQUFABceQBw5QHAlQcAVx4AXHkAcOUBwJVHXsDm23nWr9Y9SfOoORvr2wfx84yFlmk/z1hrEPZ58gLW2sn+1bonaZ5L/CRuHr3YQfrPY/IEf56sgF1x3NnJN/b3bNPlcb4dliKPWewg+ecxecI/T1bA1lc/3JLT5Hmevkwxn26/e73YQfLP0y+qEPx5DgL48c2nCZyJ++7zAO5vhX6egwBW+vPxbexdJx/g8M9zEMDq1ywbPhNgFWF5jnKS1aQA7L77HkPakyzRgPkuk8wXAhPmMRs+/WVSlyf88+QFbL6dp87xza/mR/I8+guBCfMYwMk/j8kT/HkwVVl5AHDlAcCVBwBXHgBceQBw5QHAlcf/AZ28dql1f0d7AAAAAElFTkSuQmCC" /><img src="data:image/png;base64,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" /></p>
+<p>This WQS model tests the relationship between our dependent variable, y, and a WQS index estimated from ranking exposure concentrations in quartiles (<code>q = 4</code>). It also divided the data for training and validation, with 40% of the dataset for training and 60% for validation (<code>validation = 0.6</code>), and assigned 3 bootstrapping steps (<code>b = 3</code>) for parameter estimation. We chose to let the function create the training and validation dataset by itself (<code>valid_var = NULL</code>). Because WQS provides an unidirectional evaluation of mixture effects, we first examined weights derived from bootstrapped models where <span class="math inline">\(\beta_1\)</span> was positive (<code>b1_pos = T</code>); we could test for negative associations by testig that parameter to false (<code>b1_pos = F</code>). We linked our model to a gaussian distribution to test for relationships between the continuous outcome and exposures (<code>family = &quot;gaussian&quot;</code>), and fixed the seed to 2016 for reproducible results (<code>seed = 2016</code>). Since we suspected a non-linear dynamic we added the <code>wqs2</code> parameter (<code>wqs2 = T</code>) to include a quadratic term in the model. We plotted both a summary model with loess fit and a summary of each variables relative weight (<code>plots = T</code>). Finally, in the directory we saved summaries (<code>tables = T</code>) for the linear (<code>Summary_results.html</code>) and the quadratic model (<code>Summary_results_quadratic.html</code>), the results of ANOVA (<code>Aov_results.html</code>) and the table with the weights (<code>Weights_table.html</code>). A table with the regression results is printed automatically in the Viewer Pane.</p>
+<p>The first plot is a barplot showing the weights assigned to each variable ordered from the highest weight to the lowest. These results indicate that the variables <code>log_LBXF06LA</code>, <code>log_LBXD02LA</code>, and <code>log_LBXF04LA</code> are the largest contributors to this mixture effect, with the first 7 chemicals explaining over the 70% of the total weights. The same information is contained in the table <code>results$final_weights</code>:</p>
+<table>
+<thead>
+<tr class="header">
+<th align="left">mix_name</th>
+<th align="right">mean_weight</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">log_LBXF06LA</td>
+<td align="right">0.160</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXD02LA</td>
+<td align="right">0.151</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBXF04LA</td>
+<td align="right">0.099</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXF07LA</td>
+<td align="right">0.092</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX167LA</td>
+<td align="right">0.078</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXD04LA</td>
+<td align="right">0.070</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX138LA</td>
+<td align="right">0.068</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBX157LA</td>
+<td align="right">0.059</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX196LA</td>
+<td align="right">0.052</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXD01LA</td>
+<td align="right">0.030</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX189LA</td>
+<td align="right">0.028</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBX118LA</td>
+<td align="right">0.025</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX199LA</td>
+<td align="right">0.022</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBX105LA</td>
+<td align="right">0.015</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX156LA</td>
+<td align="right">0.014</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXHXCLA</td>
+<td align="right">0.012</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX170LA</td>
+<td align="right">0.009</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXTCDLA</td>
+<td align="right">0.006</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBXD05LA</td>
+<td align="right">0.006</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXF08LA</td>
+<td align="right">0.004</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBXF05LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXD07LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX153LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXF02LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBXPCBLA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXF01LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX074LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBX187LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX194LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXF09LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBXD03LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBX099LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="odd">
+<td align="left">log_LBX180LA</td>
+<td align="right">0.000</td>
+</tr>
+<tr class="even">
+<td align="left">log_LBXF03LA</td>
+<td align="right">0.000</td>
+</tr>
+</tbody>
+</table>
+<p>In the second plot we have a representation of the wqs index vs the outcome (adjusted for the model residual when covariates are included in the model) that show the direction and the shape of the association between the exposure and the outcome. For example in this case we can observe a linear and positive relationship between the mixture and the <code>y</code> variable.</p>
+<p>To test the statistical significance of the association between the variables in the model, the following code has to be run:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(results$fit)</code></pre></div>
+<p>These are the results for our example:</p>
+<table style="width:86%;">
+<caption>Fitting generalized (gaussian/identity) linear model: y ~ .</caption>
+<colgroup>
+<col width="25%"></col>
+<col width="15%"></col>
+<col width="18%"></col>
+<col width="13%"></col>
+<col width="13%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Estimate</th>
+<th align="center">Std. Error</th>
+<th align="center">t value</th>
+<th align="center">Pr(&gt;|t|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>wqs</strong></td>
+<td align="center">1.492</td>
+<td align="center">0.1176</td>
+<td align="center">12.69</td>
+<td align="center">8.729e-30</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>(Intercept)</strong></td>
+<td align="center">-2.304</td>
+<td align="center">0.1875</td>
+<td align="center">-12.29</td>
+<td align="center">2.394e-28</td>
+</tr>
+</tbody>
+</table>
+<p>This last table tells us that the association is positive and statistically significant (<code>p&lt;0.001</code>).</p>
+<p>Since we decided to add also the <code>wqs</code> quadratic term (<code>wqs2 = TRUE</code>), the <code>gwqs</code> function fits a second model adding the wqs quadratic term. The code to view the results of the test is the following:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(results$fit_2)</code></pre></div>
+<table style="width:86%;">
+<caption>Fitting generalized (gaussian/identity) linear model: y ~ .</caption>
+<colgroup>
+<col width="25%"></col>
+<col width="15%"></col>
+<col width="18%"></col>
+<col width="13%"></col>
+<col width="13%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Estimate</th>
+<th align="center">Std. Error</th>
+<th align="center">t value</th>
+<th align="center">Pr(&gt;|t|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>wqs</strong></td>
+<td align="center">1.345</td>
+<td align="center">0.5</td>
+<td align="center">2.689</td>
+<td align="center">0.007574</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>wqs_2</strong></td>
+<td align="center">0.0508</td>
+<td align="center">0.167</td>
+<td align="center">0.3042</td>
+<td align="center">0.7612</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>(Intercept)</strong></td>
+<td align="center">-2.212</td>
+<td align="center">0.356</td>
+<td align="center">-6.214</td>
+<td align="center">1.741e-09</td>
+</tr>
+</tbody>
+</table>
+<p>The quadratic term is not significant in our model confirming that the relationship between the outcome and the exposure is linear (as shown by the previous plot).</p>
+<p>There is also the option to compare the two models with the analysis of variance:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">results$aov</code></pre></div>
+<table style="width:72%;">
+<caption>Analysis of Deviance Table</caption>
+<colgroup>
+<col width="16%"></col>
+<col width="18%"></col>
+<col width="6%"></col>
+<col width="15%"></col>
+<col width="15%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center">Resid. Df</th>
+<th align="center">Resid. Dev</th>
+<th align="center">Df</th>
+<th align="center">Deviance</th>
+<th align="center">Pr(&gt;Chi)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">298</td>
+<td align="center">376.9</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+<td align="center">NA</td>
+</tr>
+<tr class="even">
+<td align="center">297</td>
+<td align="center">376.7</td>
+<td align="center">1</td>
+<td align="center">0.1174</td>
+<td align="center">0.761</td>
+</tr>
+</tbody>
+</table>
+<p>Where the first line refers to the simple model and the second to the model with the wqs quadratic term. The results confirm that the linear model best explains the relationship between the outcome and the exposure.</p>
+<p>The <code>gwqs</code> function gives back other outputs like the vector of the estimated <span class="math inline">\(\beta_1\)</span> in each bootstrap sample (<code>results$b1</code>), the vector of the values that indicate whether the solver has converged (0) or not (1 or 2) (<code>results$conv</code>), the matrix with all the estimated weights, <span class="math inline">\(\beta_1\)</span> and p-values for each bootstrap sample (<code>results$wb1pm</code>), the vector containing the y values adjusted for the residuals of the fitted model when it is covariates adjusted (<code>results$y_adj</code>), the list of vectors containing the <code>rownames</code> of the subjects included in each bootstrap dataset (<code>results$index_b</code>), the data frame containing the subjects used to estimate the weights in each bootstrap (<code>results$data_t</code>), the data frame containing the subjects used to estimate the parameters of the final model (<code>results$data_v</code>) and the data frame containing the final weights associated to each chemical (<code>results$final_weights</code>).</p>
+</div>
+<div id="example-2" class="section level3">
+<h3>Example 2</h3>
+<p>In the following code we run a logistic regression (<code>family = &quot;binomial&quot;</code>) to test the association between the exposure to the mixture and the outcome <code>disease_state</code> and we also add the covariate <code>sex</code>. Since the mixture concentrations are already standardized we can also run a model without categorizing for quantiles (<code>q = NULL</code>). We chose to create the training and validation dataset and assign to <code>valid_var</code> the name of the variable that identifies the two datasets (<code>valid_var = &quot;group&quot;</code>). Furthermore we examined weights derived from bootstrapped models where <span class="math inline">\(\beta_1\)</span> was negative (<code>b1_pos = F</code>) since (as we can see in the following plot) there is a negative association between the exposure and the outcome:</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># we create the variable &quot;group&quot; in the dataset to identify the training and validation dataset:</span>
+<span class="co"># we choose 300 observations for the validation dataset and the remaining 200 for the training dataset</span>
+<span class="kw">set.seed</span>(<span class="dv">2016</span>)
+wqs_data$group =<span class="st"> </span><span class="dv">0</span>
+wqs_data$group[<span class="kw">rownames</span>(wqs_data) %in%<span class="st"> </span><span class="kw">sample</span>(<span class="kw">rownames</span>(wqs_data), <span class="dv">300</span>)] =<span class="st"> </span><span class="dv">1</span>
+
+<span class="co"># we run the logistic model and save the results in the variable &quot;results2&quot;</span>
+results2 =<span class="st"> </span><span class="kw">gwqs</span>(disease_state ~<span class="st"> </span>sex, <span class="dt">mix_name =</span> toxic_chems, <span class="dt">data =</span> wqs_data, <span class="dt">q =</span> <span class="ot">NULL</span>, 
+                <span class="dt">validation =</span> <span class="dv">0</span>, <span class="dt">valid_var =</span> <span class="st">&quot;group&quot;</span>, <span class="dt">b =</span> <span class="dv">3</span>, <span class="dt">b1_pos =</span> F, 
+                <span class="dt">family =</span> <span class="st">&quot;binomial&quot;</span>, <span class="dt">seed =</span> <span class="dv">1959</span>, <span class="dt">wqs2 =</span> F, <span class="dt">plots =</span> T, <span class="dt">tables =</span> T)</code></pre></div>
+<p><img src="data:image/png;base64,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" /><img src="data:image/png;base64,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" /></p>
+<p>From the first plot we see the per-variable calculated weights, ordered by relative magnitude. As above, the second plot shows us a negative relationship between the mixture and the state of disease, but as we can see from the following table it is not statistically significant (<code>p=0.132</code>):</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">summary</span>(results2$fit)</code></pre></div>
+<table style="width:86%;">
+<caption>Fitting generalized (binomial/logit) linear model: y ~ .</caption>
+<colgroup>
+<col width="25%"></col>
+<col width="15%"></col>
+<col width="18%"></col>
+<col width="13%"></col>
+<col width="13%"></col>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="center"> </th>
+<th align="center">Estimate</th>
+<th align="center">Std. Error</th>
+<th align="center">z value</th>
+<th align="center">Pr(&gt;|z|)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center"><strong>wqs</strong></td>
+<td align="center">-0.3129</td>
+<td align="center">0.2079</td>
+<td align="center">-1.505</td>
+<td align="center">0.1323</td>
+</tr>
+<tr class="even">
+<td align="center"><strong>sex</strong></td>
+<td align="center">0.3674</td>
+<td align="center">0.2469</td>
+<td align="center">1.488</td>
+<td align="center">0.1368</td>
+</tr>
+<tr class="odd">
+<td align="center"><strong>(Intercept)</strong></td>
+<td align="center">-0.877</td>
+<td align="center">0.1782</td>
+<td align="center">-4.922</td>
+<td align="center">8.556e-07</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="references" class="section level2">
+<h2>References</h2>
+<p>Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum regression for highly correlated data in a risk analysis setting. J Biol Agricul Environ Stat. 2014:1-21. ISSN: 1085-7117. DOI: 10.1007/ s13253-014-0180-3. <a href="http://dx.doi.org/10.1007/s13253-014-0180-3" class="uri">http://dx.doi.org/10.1007/s13253-014-0180-3</a>.</p>
+<p>Czarnota J, Gennings C, Colt JS, De Roos AJ, Cerhan JR, Severson RK, Hartge P, Ward MH, Wheeler D. 2015. Analysis of environmental chemical mixtures and non-Hodgkin lymphoma risk in the NCI-SEER NHL study. Environmental Health Perspectives.</p>
+<p>Czarnota J, Gennings C, Wheeler D. 2015. Assessment of weighted quantile sum regression for modeling chemical mixtures and cancer risk. Cancer Informatics, 2015:14(S2) 159-171.</p>
+</div>
+<div id="acknowledgements" class="section level2">
+<h2>Acknowledgements</h2>
+<p>This package was developed at the CHEAR Data Center (Dept. of Environmental Medicine and Public Health, Icahn School of Medicine at Mount Sinai) with funding and support from NIEHS (U2C ES026555-01) with additional support from the Empire State Development Corporation.</p>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

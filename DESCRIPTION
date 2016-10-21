@@ -1,0 +1,17 @@
+Package: gWQS
+Type: Package
+Title: Generalized Weighted Quantile Sum Regression
+Version: 1.0.0
+Author: Stefano Renzetti, Paul Curtin, Allan C Just, Chris Gennings
+Maintainer: Stefano Renzetti <stefano.renzetti88@gmail.com>
+Description: Fits Weighted Quantile Sum (WQS) regressions for continuous or binomial outcomes.
+Imports: Rsolnp, ggplot2, ztable, tableHTML
+License: GPL (>= 2)
+LazyData: true
+RoxygenNote: 5.0.1
+Suggests: knitr, rmarkdown, pander
+VignetteBuilder: knitr
+NeedsCompilation: no
+Packaged: 2016-10-21 13:51:16 UTC; renzes01
+Repository: CRAN
+Date/Publication: 2016-10-21 21:38:22

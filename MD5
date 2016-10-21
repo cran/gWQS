@@ -1,0 +1,13 @@
+dfa4b5ad3a45d48007c608263ba9ca5b *DESCRIPTION
+53e368c0ac35a26aeafdbec51eb90892 *NAMESPACE
+78f92074046e96d61397978cf9f719c8 *R/data.R
+5a6f09d418fdce0ee2433e154637bb34 *R/gwqs.R
+225e07b5ce185e0cb411c0f48079d034 *R/wqs_helpers.R
+8cccfca72ecee47e5aa3618388dc3f98 *build/vignette.rds
+864c8f3c41fd722dbc45130a3870a7d7 *data/wqs_data.RData
+a19cd80e428f4a670d1312b1fa8a4d07 *inst/doc/gwqs-vignette.R
+a52746c95c27d15ce5c553843dc23e64 *inst/doc/gwqs-vignette.Rmd
+2909a76142cc27629048481a698c88fa *inst/doc/gwqs-vignette.html
+bd77059b7063830f2c9f7c39a045c67b *man/gwqs.Rd
+14d32ba79fbda9269712e6d8ccb139e1 *man/wqs_data.Rd
+a52746c95c27d15ce5c553843dc23e64 *vignettes/gwqs-vignette.Rmd
