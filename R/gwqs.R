@@ -19,6 +19,8 @@
 #' @param b Number of bootstrap samples used in parameter estimation.
 #' @param b1_pos A logical value that determines whether weights are derived from models where the beta
 #' values were positive or negative.
+#' @param b1_constr A logial value that determines whether to apply positive (if \code{b1_pos = TRUE}) or
+#' negative (if \code{b1_pos = FALSE}) constraints in the optimization function for the weight estimation.
 #' @param family A character value, if equal to \code{"gaussian"} a linear model is implemented, if
 #' equal to \code{"binomial"} a logistic model is implemented.
 #' @param seed An \code{integer} value to fix the seed, if it is equal to NULL no seed is chosen.
@@ -71,7 +73,7 @@
 #' model. If \code{wqs2 = FALSE}, NULL is returned.}
 #'
 #' @author
-#' Stefano Renzetti, Paul Curtin, Allan C Just, Chris Gennings
+#' Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings
 #'
 #' @references
 #' Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum
@@ -107,8 +109,8 @@
 #' # weights values and the model parameters with the respectively statistics are generated in
 #' # the viewer window
 #' results = gwqs(y ~ NULL, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
-#'                b = 3, b1_pos = TRUE, family = "gaussian", seed = 2016, wqs2 = FALSE, plots = TRUE,
-#'                tables = TRUE)
+#'                b = 2, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian", seed = 2016,
+#'                wqs2 = FALSE, plots = TRUE, tables = TRUE)
 #'
 #' # to test the significance of the covariates
 #' summary(results$fit)
@@ -118,13 +120,13 @@
 #' @import ztable
 #' @import tableHTML
 #'
-#' @importFrom stats model.matrix na.omit na.omit glm gaussian binomial resid coef anova quantile
+#' @importFrom stats lm model.matrix na.omit na.omit glm gaussian binomial resid coef anova quantile
 #'
 #' @export
 
 gwqs <- function(formula, mix_name, data, q = 4, validation = 0.6, valid_var = NULL, b = 100,
-                 b1_pos = TRUE, family = "gaussian", seed = NULL, wqs2 = FALSE, plots = FALSE,
-                 tables = FALSE){
+                 b1_pos = TRUE, b1_constr = FALSE, family = "gaussian", seed = NULL, wqs2 = FALSE,
+                 plots = FALSE, tables = FALSE){
 
   # Checking function
   .check.function(formula, mix_name, data, q, validation, valid_var, b, b1_pos, family, seed, wqs2,
@@ -169,7 +171,7 @@ gwqs <- function(formula, mix_name, data, q = 4, validation = 0.6, valid_var = N
   }
 
   # parameters estimation and model fitting
-  par_model = par.modl.est(data_t, y_name, q_name, cov_name, b, b1_pos, family, seed)
+  par_model = par.modl.est(data_t, y_name, q_name, cov_name, b, b1_pos, b1_constr, family, seed)
 
   wght_matrix = par_model$wght_matrix
   b1 = par_model$b1
@@ -177,18 +179,18 @@ gwqs <- function(formula, mix_name, data, q = 4, validation = 0.6, valid_var = N
   p_val = par_model$p_val
   index_b = par_model$index_b
 
-  # estimate mean weight for each component
+  # estimate mean weight for each component (exclude weights from iterations with failed convergence)
   wb1pm <- as.data.frame(cbind(wght_matrix, b1, p_val))
   names(wb1pm) = c(mix_name, "b1", "p_val")
 
   if (b1_pos) {
-    mean_weight = colMeans(wb1pm[wb1pm$b1 > 0, mix_name, drop = FALSE])
-    if (dim(wb1pm[wb1pm$b1 > 0, mix_name, drop = FALSE])[1] == 0)
+    mean_weight = colMeans(wb1pm[wb1pm$b1 > 0 & conv!=2, mix_name, drop = FALSE])
+    if (dim(wb1pm[wb1pm$b1 > 0 & conv!=2, mix_name, drop = FALSE])[1] == 0)
       stop("There are no positive b1 in the bootstrapped models")
   }
   else {
-    mean_weight = colMeans(wb1pm[wb1pm$b1 < 0, mix_name, drop = FALSE])
-    if (dim(wb1pm[wb1pm$b1 < 0, mix_name, drop = FALSE])[1] == 0)
+    mean_weight = colMeans(wb1pm[wb1pm$b1 < 0 & conv!=2, mix_name, drop = FALSE])
+    if (dim(wb1pm[wb1pm$b1 < 0 & conv!=2, mix_name, drop = FALSE])[1] == 0)
       stop("There are no negative b1 in the bootstrapped models")
   }
 
@@ -216,7 +218,7 @@ gwqs <- function(formula, mix_name, data, q = 4, validation = 0.6, valid_var = N
   pos = match(data_plot$mix_name, sort(mix_name))
   data_plot$mix_name = factor(data_plot$mix_name, levels(data_plot$mix_name)[pos])
 
-  y_adj_wqs_df = as.data.frame(cbind(y_adj, wqs_model$wqs[, 1]))
+  y_adj_wqs_df = as.data.frame(cbind(y_adj, wqs_model$wqs))
   names(y_adj_wqs_df) = c("y_adj", "wqs")
 
   if (plots == TRUE) plots(data_plot, y_adj_wqs_df, q, mix_name, mean_weight)
@@ -230,9 +232,10 @@ gwqs <- function(formula, mix_name, data, q = 4, validation = 0.6, valid_var = N
 
   # creating the list of elements to return
   results = list(wqs_model$m_f, conv, wb1pm, y_adj, wqs_index, index_b, data_t, data_v,
-                   data_plot, wqs_model$m_f2, wqs_model$aov)
+                 data_plot, wqs_model$m_f2, wqs_model$aov)
   names(results) = c("fit", "conv", "wb1pm", "y_adj", "wqs", "index_b", "data_t", "data_v",
                      "final_weights", "fit_2", "aov")
 
   return(results)
 }
+

@@ -5,8 +5,8 @@
 \title{Fitting Weighted Quantile Sum regression models}
 \usage{
 gwqs(formula, mix_name, data, q = 4, validation = 0.6, valid_var = NULL,
-  b = 100, b1_pos = TRUE, family = "gaussian", seed = NULL,
-  wqs2 = FALSE, plots = FALSE, tables = FALSE)
+  b = 100, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian",
+  seed = NULL, wqs2 = FALSE, plots = FALSE, tables = FALSE)
 }
 \arguments{
 \item{formula}{An object of class \code{formula} specifying the relationship to be tested. If no
@@ -33,6 +33,9 @@ function create the validation and training dataset by itself.}
 
 \item{b1_pos}{A logical value that determines whether weights are derived from models where the beta
 values were positive or negative.}
+
+\item{b1_constr}{A logial value that determines whether to apply positive (if \code{b1_pos = TRUE}) or
+negative (if \code{b1_pos = FALSE}) constraints in the optimization function for the weight estimation.}
 
 \item{family}{A character value, if equal to \code{"gaussian"} a linear model is implemented, if
 equal to \code{"binomial"} a logistic model is implemented.}
@@ -113,15 +116,12 @@ toxic_chems = c("log_LBX074LA", "log_LBX099LA", "log_LBX105LA", "log_LBX118LA",
 # weights values and the model parameters with the respectively statistics are generated in
 # the viewer window
 results = gwqs(y ~ NULL, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
-               b = 3, b1_pos = TRUE, family = "gaussian", seed = 2016, wqs2 = FALSE, plots = TRUE,
-               tables = TRUE)
+               b = 3, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian", seed = 2016,
+               wqs2 = FALSE, plots = TRUE, tables = TRUE)
 
 # to test the significance of the covariates
 summary(results$fit)
 
-}
-\author{
-Stefano Renzetti, Paul Curtin, Allan C Just, Chris Gennings
 }
 \references{
 Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum
@@ -137,4 +137,6 @@ Czarnota J, Gennings C, Wheeler D. 2015. Assessment of weighted quantile sum reg
 chemical mixtures and cancer risk. Cancer Informatics,
 2015:14(S2) 159-171 DOI: 10.4137/CIN.S17295.\cr
 }
-
+\author{
+Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings
+}

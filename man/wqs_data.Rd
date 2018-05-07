@@ -29,4 +29,3 @@ covariates.
 }
 }
 \keyword{datasets}
-

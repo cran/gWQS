@@ -1,6 +1,6 @@
 ---
 title: "How to use gWQS package"
-author: "Stefano Renzetti, Paul Curtin, Allan C Just, Chris Gennings"
+author: "Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
@@ -53,13 +53,13 @@ toxic_chems = c("log_LBX074LA", "log_LBX099LA", "log_LBX105LA", "log_LBX118LA",
                 "log_LBXTCDLA", "log_LBXHXCLA")
 
 # we run the model and save the results in the variable "results"
-results = gwqs(y ~ NULL, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6, 
-               valid_var = NULL, b = 3, b1_pos = T, family = "gaussian", seed = 2016, 
-               wqs2 = T, plots = T, tables = T)
+results = gwqs(y ~ NULL, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
+               valid_var = NULL, b = 2, b1_pos = T, b1_constr = F, family = "gaussian", 
+               seed = 2016, wqs2 = T, plots = T, tables = T)
 
 ```
 
-This WQS model tests the relationship between our dependent variable, y, and a WQS index estimated from ranking exposure concentrations in quartiles (`q = 4`). It also divided the data for training and validation, with 40% of the dataset for training and 60% for validation (`validation = 0.6`), and assigned 3 bootstrapping steps (`b = 3`) for parameter estimation. We chose to let the function create the training and validation dataset by itself (`valid_var = NULL`). Because WQS provides an unidirectional evaluation of mixture effects, we first examined weights derived from bootstrapped models where $\beta_1$ was positive (`b1_pos = T`); we could test for negative associations by testig that parameter to false (`b1_pos = F`). We linked our model to a gaussian distribution to test for relationships between the continuous outcome and exposures (`family = "gaussian"`), and fixed the seed to 2016 for reproducible results (`seed = 2016`). Since we suspected a non-linear dynamic we added the `wqs2` parameter (`wqs2 = T`) to include a quadratic term in the model. We plotted both a summary model with loess fit and a summary of each variables relative weight (`plots = T`). Finally, in the directory we saved summaries (`tables = T`) for the linear (`Summary_results.html`) and the quadratic model (`Summary_results_quadratic.html`), the results of ANOVA (`Aov_results.html`) and the table with the weights (`Weights_table.html`). A table with the regression results is printed automatically in the Viewer Pane.
+This WQS model tests the relationship between our dependent variable, y, and a WQS index estimated from ranking exposure concentrations in quartiles (`q = 4`). It also divided the data for training and validation, with 40% of the dataset for training and 60% for validation (`validation = 0.6`), and assigned 3 bootstrapping steps (`b = 3`) for parameter estimation. We chose to let the function create the training and validation dataset by itself (`valid_var = NULL`). Because WQS provides an unidirectional evaluation of mixture effects, we first examined weights derived from bootstrapped models where $\beta_1$ was positive (`b1_pos = T`); we could test for negative associations by testig that parameter to false (`b1_pos = F`). We can also choose to constraint the $\beta_1$ to be positive (`b1_pos = T` and `b1_constr = T`) or negative (`b1_pos = F` and `b1_constr = T`) when we estimate the weights; in this case we are not applying a constraint to $\beta_1$. We linked our model to a gaussian distribution to test for relationships between the continuous outcome and exposures (`family = "gaussian"`), and fixed the seed to 2016 for reproducible results (`seed = 2016`). Since we suspected a non-linear dynamic we added the `wqs2` parameter (`wqs2 = T`) to include a quadratic term in the model. We plotted both a summary model with loess fit and a summary of each variables relative weight (`plots = T`). Finally, in the directory we saved summaries (`tables = T`) for the linear (`Summary_results.html`) and the quadratic model (`Summary_results_quadratic.html`), the results of ANOVA (`Aov_results.html`) and the table with the weights (`Weights_table.html`). A table with the regression results is printed automatically in the Viewer Pane.
 
 The first plot is a barplot showing the weights assigned to each variable ordered from the highest weight to the lowest. These results indicate that the variables `log_LBXF06LA`, `log_LBXD02LA`, and `log_LBXF04LA` are the largest contributors to this mixture effect, with the first 7 chemicals explaining over the 70% of the total weights. The same information is contained in the table `results$final_weights`:
 
@@ -123,7 +123,7 @@ wqs_data$group[rownames(wqs_data) %in% sample(rownames(wqs_data), 300)] = 1
 
 # we run the logistic model and save the results in the variable "results2"
 results2 = gwqs(disease_state ~ sex, mix_name = toxic_chems, data = wqs_data, q = NULL, 
-                validation = 0, valid_var = "group", b = 3, b1_pos = F, 
+                validation = 0, valid_var = "group", b = 2, b1_pos = F, b1_constr = F,
                 family = "binomial", seed = 1959, wqs2 = F, plots = T, tables = T)
 ```
 
@@ -140,7 +140,7 @@ pander(results2$fit)
 
 ## References
 
-Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum regression for highly correlated data in a risk analysis setting. J Biol Agricul Environ Stat. 2014:1-21. ISSN: 1085-7117. DOI: 10.1007/ s13253-014-0180-3. http://dx.doi.org/10.1007/s13253-014-0180-3.
+Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum regression for highly correlated data in a risk analysis setting. J Agricul Biol Environ Stat. 2014:1-21. ISSN: 1085-7117. DOI: 10.1007/ s13253-014-0180-3. http://dx.doi.org/10.1007/s13253-014-0180-3.
 
 Czarnota J, Gennings C, Colt JS, De Roos AJ, Cerhan JR, Severson RK, Hartge P, Ward MH, Wheeler D. 2015. Analysis of environmental chemical mixtures and non-Hodgkin lymphoma risk in the NCI-SEER NHL study. Environmental Health Perspectives.
 

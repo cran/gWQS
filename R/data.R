@@ -20,3 +20,4 @@
 #'
 #' @format A data frame with 500 rows and 37 variables
 "wqs_data"
+
