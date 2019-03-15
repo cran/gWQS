@@ -109,7 +109,7 @@
 #' # weights values and the model parameters with the respectively statistics are generated in
 #' # the viewer window
 #' results = gwqs(y ~ NULL, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
-#'                b = 2, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian", seed = 2016,
+#'                b = 3, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian", seed = 2016,
 #'                wqs2 = FALSE, plots = TRUE, tables = TRUE)
 #'
 #' # to test the significance of the covariates
@@ -144,6 +144,7 @@ gwqs <- function(formula, mix_name, data, q = 4, validation = 0.6, valid_var = N
                                     data[, valid_var, drop = FALSE]))
   data_f = na.omit(data_f)
 
+  suppressWarnings(RNGversion("3.5.0"))
   set.seed(seed)
 
   # defining quantile variables
