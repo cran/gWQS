@@ -4,30 +4,38 @@
 \alias{gwqs}
 \title{Fitting Weighted Quantile Sum regression models}
 \usage{
-gwqs(formula, mix_name, data, q = 4, validation = 0.6, valid_var = NULL,
-  b = 100, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian",
-  seed = NULL, wqs2 = FALSE, plots = FALSE, tables = FALSE)
+gwqs(formula, data, na.action, weights, mix_name, stratified, valid_var,
+  b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE,
+  q = 4, validation = 0.6, family = gaussian, zilink = c("logit",
+  "probit", "cloglog", "cauchit", "log"), seed = NULL, pred = 0,
+  plots = FALSE, tables = FALSE, plan_strategy = "sequential",
+  control = list(rho = 1, outer.iter = 400, inner.iter = 800, delta =
+  1e-07, tol = 1e-08, trace = 0), lp = 0, ln = 0)
 }
 \arguments{
-\item{formula}{An object of class \code{formula} specifying the relationship to be tested. If no
-covariates are being tested specify \code{y ~ NULL}.}
-
-\item{mix_name}{A character vector listing the variables contributing to a mixture effect.}
+\item{formula}{An object of class \code{formula} specifying the relationship to be tested. The \code{wqs}
+term must be included in \code{formula}, e.g. \code{y ~ wqs + ...}. To test for an interaction term with
+a continuous variable \code{a} or for a quadratic term we can specify the \code{formula} as below:
+\code{y ~ wqs*a + ...} and \code{y ~ wqs + I(wqs^2) + ...}, respectively.}
 
 \item{data}{The \code{data.frame} containing the variables to be included in the model.}
 
-\item{q}{An \code{integer} to specify how mixture variables will be ranked, e.g. in quartiles
-(\code{q = 4}), deciles (\code{q = 10}), or percentiles (\code{q = 100}). If \code{q = NULL} then
-the values of the mixture variables are taken (these must be standardized).}
+\item{na.action}{\code{\link[stats]{model.frame}}. \code{na.omit} is the default.}
 
-\item{validation}{Percentage of the dataset to be used to validate the model. If
-\code{validation = 0} then the test dataset is used as validation dataset too.}
+\item{weights}{an optional vector of weights to be used in the fitting process.
+Should be \code{NULL} or a numeric vector.}
+
+\item{mix_name}{A character vector listing the variables contributing to a mixture effect.}
+
+\item{stratified}{The character name of the variable for which you want to stratify for.
+It has to be a \code{factor}.}
 
 \item{valid_var}{A character value containing the name of the variable that identifies the validation
 and the training dataset. You previously need to create a variable in the dataset which is equal to 1
-for the observations you want to include in the validation dataset and equal to 0 for the observation
-you want to include in the training dataset. Assign \code{valid_var = NULL} if you want to let the
-function create the validation and training dataset by itself.}
+for the observations you want to include in the validation dataset, equal to 0 for the observation
+you want to include in the training dataset (use 0 also for the validation dataset if you want to train and
+validate the model on the same data) and equal to 2 if you want to keep part of the data for the
+predictive model.}
 
 \item{b}{Number of bootstrap samples used in parameter estimation.}
 
@@ -37,64 +45,91 @@ values were positive or negative.}
 \item{b1_constr}{A logial value that determines whether to apply positive (if \code{b1_pos = TRUE}) or
 negative (if \code{b1_pos = FALSE}) constraints in the optimization function for the weight estimation.}
 
-\item{family}{A character value, if equal to \code{"gaussian"} a linear model is implemented, if
-equal to \code{"binomial"} a logistic model is implemented.}
+\item{zero_infl}{A logical value (\code{TRUE} or \code{FALSE}) that allows to fit a zero inflated
+model in case \code{family = "poisson"} or \code{family = "negbin"}.}
 
-\item{seed}{An \code{integer} value to fix the seed, if it is equal to NULL no seed is chosen.}
+\item{q}{An \code{integer} to specify how mixture variables will be ranked, e.g. in quartiles
+(\code{q = 4}), deciles (\code{q = 10}), or percentiles (\code{q = 100}). If \code{q = NULL} then
+the values of the mixture variables are taken (these must be standardized).}
 
-\item{wqs2}{A logical value indicating whether a quadratic term should be included in the model
-(\code{wqs2 = TRUE}) or not (\code{wqs2 = FALSE}).}
+\item{validation}{Percentage of the dataset to be used to validate the model. If
+\code{validation = 0} then the test dataset is used as validation dataset too.}
+
+\item{family}{A character value that allows to decide for the glm: \code{gaussian} for linear regression,
+\code{binomial} for logistic regression \code{"multinomial"} for multinomial regression,
+\code{poisson} for Poisson regression, \code{quasipoisson} for quasi-Poisson regression,
+\code{"negbin"} for negative binomial regression.}
+
+\item{zilink}{character specification of link function in the binary zero-inflation model
+(you can choose among "logit", "probit", "cloglog", "cauchit", "log").}
+
+\item{seed}{An \code{integer} value to fix the seed, if it is equal to \code{NULL} no seed is chosen.}
+
+\item{pred}{Percentage of the dataset to be used for the predictive model. If \code{pred = 0} then no
+predicitve model is going to be built.}
 
 \item{plots}{A logical value indicating whether plots should be generated with the output
 (\code{plots = TRUE}) or not (\code{plots = FALSE}).}
 
-\item{tables}{A logical value indicating whether tables should be generated in the directory
-with the output (\code{tables = TRUE}) or not (\code{tables = FALSE}). A preview of the estimates
-of the final weights is generated in the Viewer Pane}
+\item{tables}{A logical value indicating whether tables should be generated in the output
+(\code{tables = TRUE}) or not (\code{tables = FALSE}).}
+
+\item{plan_strategy}{A character value that allows to choose the evaluation strategies for the
+\code{plan} function. You can choose among "sequential", "transparent", "multisession", "multicore",
+"multiprocess", "cluster" and "remote" (see \code{\link[future]{plan}} help page for more details).}
+
+\item{control}{The control list of optimization parameters. See \code{\link[Rsolnp]{solnp}} for details.}
+
+\item{lp}{The lambda parameter that add a penlization term when we want to constrain in the negative direction.
+This is an alternative to \code{b1_constr = TRUE}.}
+
+\item{ln}{The lambda parameter that add a penlization term when we want to constrain in the positive direction.
+This is an alternative to \code{b1_constr = TRUE}.}
 }
 \value{
 \code{gwqs} return the results of the WQS regression as well as many other objects and datasets.
 
-\item{fit}{A \code{glm2} object that summarizes the output of the WQS model, reflecting either a
-linear or logistic regression depending on how the \code{family} parameter was specified
-(respectively, \code{"gaussian"} or \code{"binomial"}). The summary function can be used to call and
-print fit data.}
+\item{fit}{The object that summarizes the output of the WQS model, reflecting a
+linear, logistic, multinomial, Poisson, quasi-Poisson or negative binomial regression
+depending on how the \code{family} parameter was specified.
+The summary function can be used to call and print fit data (not for multinomial regression).}
 \item{conv}{Indicates whether the solver has converged (0) or not (1 or 2).}
-\item{wb1pm}{Matrix of estimated weights, mixture effect parameter estimates and the associated
-p-values estimated for each bootstrap iteration.}
-\item{y_adj}{Vector containing the y values (dependent variable) adjusted for the residuals of a
-fitted model adjusted for covariates.}
+\item{bres}{Matrix of estimated weights, mixture effect parameter estimates and the associated
+standard errors, statistics and p-values estimated for each bootstrap iteration.}
 \item{wqs}{Vector containing the wqs index for each subject.}
-\item{index_b}{List of vectors containing the \code{rownames} of the subjects included in each
+\item{q_i}{List of the cutoffs used to divide in quantiles the variables in the mixture}
+\item{bindex}{List of vectors containing the \code{rownames} of the subjects included in each
 bootstrap dataset.}
-\item{data_t}{\code{data.frame} containing the subjects used to estimate the weights in each
-bootstrap.}
-\item{data_v}{\code{data.frame} containing the subjects used to estimate the parameters of the final
-model.}
+\item{tindex}{Vector containing the rows used to estimate the weights in each bootstrap.}
+\item{vindex}{Vector containing the rows used to estimate the parameters of the final model.}
 \item{final_weights}{\code{data.frame} containing the final weights associated to each chemical.}
-\item{fit_2}{It is the same as fit, but it containes the results of the regression with the wqs
-quadratic term. If \code{wqs2 = FALSE}, NULL is returned.}
-\item{aov}{Analysis of variance table to test the significance of the wqs quadratic term in the
-model. If \code{wqs2 = FALSE}, NULL is returned.}
+\item{y_wqs_df}{\code{data.frame} containing the dependent variable values adjusted for the
+residuals of a fitted model adjusted for covariates (original values when \code{family = binomial}
+or \code{"multinomial"}) and the wqs index estimated values.}
+\item{df_pred}{\code{data.frame} containing the variables to print the ROC curve. It is generated only
+when \code{pred > 0}}
+\item{pindex}{Vector containing the subjects used for prediction. It is generated only when \code{pred > 0}}
 }
 \description{
-Fits Weighted Quantile Sum (WQS) regressions for continuous or binomial outcomes.
+Fits Weighted Quantile Sum (WQS) regressions for continuous, binomial, multinomial, poisson, quasi-poisson and negative binomial outcomes.
 }
 \details{
-\code{gWQS} uses the \code{glm2} function in the \bold{glm2} package to fit the model. The
-\code{glm2} package is a modified version of the \code{\link[stats]{glm}} function provided and
-documented in the stats package.\cr
+\code{gWQS} uses the \code{glm} function in the \bold{stats} package to fit the linear, logistic,
+the Poisson and the quasi-Poisson regression, while the \code{glm.nb} function from the \bold{MASS}
+package is used to fit the negative binomial regression respectively. The \code{nlm} function from
+the \bold{stats} package was used to optimize the log-likelihood of the multinomial regression.\cr
 
-The \code{\link[Rsolnp]{solnp}} optimization function is used to estimate the weights in each
-bootstrap sample.
+The \code{\link[Rsolnp]{solnp}} optimization function is used to estimate the weights at each
+bootstrap step.\cr
 
-The \code{seed} argument  specifies a fixed seed through the \code{\link[base]{set.seed}} function.\cr
+The \code{seed} argument specifies a fixed seed through the \code{\link[base]{set.seed}} function.\cr
 
-The \code{wqs2} argument includes a quadratic mixture effect in the linear model. In order to test
-the significance of this term an Analysis of Variance is executed through the
-\code{\link[stats]{anova}} function.\cr
+The \code{plots} argument produces three figures (two if \code{family = binomial} or \code{"multinomial"})
+through the \code{\link[ggplot2]{ggplot}} function. One more plot will be printed if \code{pred > 0} and
+\code{family = binomial}.\cr
 
-The \code{plots} argument produces two figures through the \code{\link[ggplot2]{ggplot}} function.\cr
+The \code{tables} argument produces two tables in the viewr pane through the use of the functions
+\code{\link[knitr]{kable}} and \code{\link[kableExtra]{kable_styling}}.\cr
 }
 \examples{
 # we save the names of the mixture variables in the variable "toxic_chems"
@@ -107,23 +142,27 @@ toxic_chems = c("log_LBX074LA", "log_LBX099LA", "log_LBX105LA", "log_LBX118LA",
 "log_LBXF08LA", "log_LBXF09LA", "log_LBXPCBLA", "log_LBXTCDLA", "log_LBXHXCLA")
 
 # To run a linear model and save the results in the variable "results". This linear model
-# (family="Gaussian") will rank/standardize variables in quartiles (q = 4), perform a
+# (family = gaussian) will rank/standardize variables in quartiles (q = 4), perform a
 # 40/60 split of the data for training/validation (validation = 0.6), and estimate weights
-# over 5 bootstrap samples (b = 3). Weights will be derived from mixture effect
-# parameters that are positive (b1_pos = TRUE). A unique seed was specified (seed = 2016) so
-# this model will be reproducible, and plots describing the variable weights and linear
-# relationship will be generated as output (plots = TRUE). In the end tables describing the
-# weights values and the model parameters with the respectively statistics are generated in
-# the viewer window
-results = gwqs(y ~ NULL, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
-               b = 3, b1_pos = TRUE, b1_constr = FALSE, family = "gaussian", seed = 2016,
-               wqs2 = FALSE, plots = TRUE, tables = TRUE)
+# over 2 bootstrap samples (b = 2; in practical applications at least 100 bootstraps
+# should be used). Weights will be derived from mixture effect parameters that are positive
+# (b1_pos = TRUE). A unique seed was specified (seed = 2016) so this model will be
+# reproducible, and plots describing the variable weights and linear relationship will be
+# generated as output (plots = TRUE). In the end tables describing the weights values and
+# the model parameters with the respectively statistics are generated in the plots window
+# (tables = TRUE):
+results = gwqs(y ~ wqs, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
+               b = 2, b1_pos = TRUE, b1_constr = FALSE, family = gaussian, seed = 2016,
+               plots = TRUE, tables = TRUE)
 
 # to test the significance of the covariates
 summary(results$fit)
 
 }
 \references{
+Renzetti S, Gennings C, Curtin PC. 2019. gWQS: An R Package for Linear and Generalized Weighted
+Quantile Sum (WQS) Regression. Journal of Statistical Software.\cr
+
 Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum
 regression for highly correlated data in a risk analysis setting. J Biol Agricul Environ Stat.
 2014:1-21. ISSN: 1085-7117. DOI: 10.1007/ s13253-014-0180-3.
@@ -136,6 +175,10 @@ NCI-SEER NHL study. Environmental Health Perspectives, DOI:10.1289/ehp.1408630.\
 Czarnota J, Gennings C, Wheeler D. 2015. Assessment of weighted quantile sum regression for modeling
 chemical mixtures and cancer risk. Cancer Informatics,
 2015:14(S2) 159-171 DOI: 10.4137/CIN.S17295.\cr
+
+Brunst KJ, Sanchez Guerra M, Gennings C, et al. Maternal Lifetime Stress and Prenatal Psychological
+Functioning and Decreased Placental Mitochondrial DNA Copy Number in the PRISM Study.
+Am J Epidemiol. 2017;186(11):1227-1236. doi:10.1093/aje/kwx183.\cr
 }
 \author{
 Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings
