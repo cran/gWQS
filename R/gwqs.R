@@ -160,7 +160,6 @@
 #' @importFrom future plan future value
 #' @importFrom future.apply future_lapply
 #' @importFrom ggrepel geom_text_repel
-#' @importFrom pscl zeroinfl
 #'
 #' @export
 
@@ -184,6 +183,12 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   if(!any(grepl("wqs", rownames(attr(terms(formula), "factors"))))) stop("'formula' must contain 'wqs' term: e.g. y ~ wqs + ...")
 
   if(zero_infl){
+    if(!("pscl" %in% (.packages()))) stop("If you are willing to use zero-inflated WQS regression
+then you need to install the pscl package from GitHub
+using the following commands:\n
+install.packages(\"devtools\") ## if not already installed
+library(devtools)
+install_github(\"atahk/pscl\")")
     zilink <- make.link(match.arg(zilink))
     ff = formula
     if(length(formula[[3]]) > 1 && identical(formula[[3]][[1]], as.name("|")))
@@ -255,7 +260,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
           f2 <- remove_terms(as.formula(paste0(ff[[2]], " ~ ", deparse(ff[[3]][[3]]))), "wqs")
           formula_wo_wqs <- as.formula(paste0(deparse(f1), " | ", f2[[3]]))
         }
-        fit <- zeroinfl(formula_wo_wqs, dtf[rindex$iv,], dist = family$family, link = zilink$name)
+        fit <- pscl::zeroinfl(formula_wo_wqs, dtf[rindex$iv,], dist = family$family, link = zilink$name)
       }
       else{
         if(family$family == "negbin") fit = glm.nb(formula_wo_wqs, dtf[rindex$iv,])
@@ -271,7 +276,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   else df_pred = NULL
 
   # Plots
-  data_plot <- data.frame(mix_name, mean_weight)
+  data_plot <- data.frame(mix_name, mean_weight, stringsAsFactors = TRUE)
 
   if(family$family == "multinomial"){
     Y <- model.response(model.frame(formula, dtf[rindex$iv,]), "any")
@@ -282,10 +287,12 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
     y_adj_wqs_df = do.call("rbind", lapply(strata_names, function(i){
       if(n_levels > 3) data.frame(level = i,
                                   y = Y[rowSums(Y[, -which(colnames(Y)==i)]) == 0, i],
-                                  wqs = wqs_model$wqs[rowSums(Y[, -which(colnames(wqs_model$wqs)==i)]) == 0, i])
+                                  wqs = wqs_model$wqs[rowSums(Y[, -which(colnames(wqs_model$wqs)==i)]) == 0, i],
+                                  stringsAsFactors = TRUE)
       else data.frame(level = i,
                       y = Y[Y[, -which(colnames(Y)==i)] == 0, i],
-                      wqs = wqs_model$wqs[Y[, -which(colnames(wqs_model$wqs)==i)] == 0, i])
+                      wqs = wqs_model$wqs[Y[, -which(colnames(wqs_model$wqs)==i)] == 0, i],
+                      stringsAsFactors = TRUE)
     }))
   }
   else{
@@ -294,7 +301,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   }
 
   if(plots) plots(data_plot, y_adj_wqs_df, q, mix_name, mean_weight, wqs_model$m_f, family,
-                          n_levels, strata_names, df_pred, zero_infl)
+                  n_levels, strata_names, df_pred, zero_infl)
 
   if(family$family == "multinomial"){
     data_plot = data_plot[order(data_plot[, strata_names[1]], decreasing = TRUE),]
@@ -316,4 +323,3 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
 
   return(results)
 }
-

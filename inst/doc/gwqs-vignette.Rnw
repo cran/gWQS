@@ -49,7 +49,7 @@
 \Abstract{
 % This vignette of the \proglang{R} package \pkg{gWQS} is a slightly modified version of \cite{Renzetti+Gennings+Curtin:2019}.
 
-Weighted Quantile Sum (WQS) regression is a statistical model for multivariate regression in high-dimensional datasets commonly encountered in environmental exposures. The model constructs a weighted index estimating the mixture effect associated with all predictor variables on an outcome. The package \pkg{gWQS} extends WQS regression to applications with continuous, categorical and count outcomes. We provide four examples to illustrate the usage of the package.
+Weighted Quantile Sum (WQS) regression is a statistical model for multivariate regression in high-dimensional datasets commonly encountered in environmental exposures. The model constructs a weighted index estimating the mixture effect associated with all predictor variables on an outcome. The package \pkg{gWQS} extends WQS regression to applications with continuous, categorical and count outcomes. We provide two examples to illustrate the usage of the package.
 }
 
 %% - \Keywords{} with LaTeX markup, at least one required
@@ -111,50 +111,10 @@ library(VGAM)
 
 %% -- Introduction -------------------------------------------------------------
 
-\section[Introduction]{Introduction} \label{sec:intro}
-
-Statistical methods appropriate for the simultaneous evaluation of high-dimensional predictor sets are a critical focus in biostatistics and related quantitative fields, as well as in applied contexts including epidemiology, genomics, and related biological disciplines.  While classical strategies for addressing high-dimensional feature sets have focused either on variable-selection methods or dimensionality-reduction techniques(like Principal Component Analysis (PCA) ridge regression \citep{Hoerl+Kennard:1970}, lasso \citep{Tibshirani:1996}, adaptive lasso \citep{Zou:2006}, and elastic net \citep{Zou+Hastie:2005}), alternative strategies focusing on the mixture effect are becoming increasingly popular. Weighted quantile sum (WQS) regression \citep{Carrico+Gennings+Wheeler+Factor-Litvak:2015, Czarnota+Gennings+Wheeler:2015, Gennings+Carrico+Factor-Litvak+Krigbaum+Cirillo+Cohn:2013, Horton+Blount+Valentin-Blasini+Wapner+Whyatt+Gennings+Factor-Litvak:2015, Brunst+Sanchez-Guerra+Gennings+Hacker+Jara+Bosquet-Enlow+Wright+Baccarelli+Wright:2017} is such a mixture effect strategy that incorporates elements of both feature selection and dimensionality reduction to assess both the overall mixture effect of a given set of predictors, and the discrete contribution of constituent predictors to this overall effect. Here we introduce the \pkg{gWQS} package of the statistical software \proglang{R} \citep{R} for the implementation of WQS regression in contexts with continuous, categorical, and count-based outcomes.\\
-WQS regression constructs a weighted index estimating the mixture effect of mixture components on an outcome, which may then be used in a regression model with relevant covariates. The mixture effect associated with the additive combination of the mixture components is thereby assessed through a standard regression test on the weighted index, while the estimation of weights associated with each individual predictors allows for the assessment of the discrete effects of each individual predictor on the dependent variable.\\
-The WQS model \citep{Carrico+Gennings+Wheeler+Factor-Litvak:2015} has the following equation:
-\begin{equation} \label{eq:wqs}
-g(\mu) = \beta_0 + \beta_1\Bigg(\sum_{i=1}^{c}w_iq_i\Bigg) + \boldsymbol{z'\varphi}
-\end{equation}
-where $g$ is the link function as in generalized linear model, $\mu$ is the mean of the outcome, $q_i$ is the quantile of the $i^{th}$ component, $w_i$ is the weight (to be estimated) associated with the $i^{th}$ component, $\boldsymbol{z'}$ is the vector of covariates and $\boldsymbol{\varphi}$ is the vector of parameters associated with the covariates. The $(\sum_{i=1}^{c}w_iq_i)$ term represents the index that weights and sums the components included in the mixture. Two constrains are applied to the weights: $\sum_{i=1}^{c}w_i=1$ and $0 \leq w_i \leq 1$. To estimate the model, the dataset may be split in a training and a validation dataset: the first one to be used for the weight estimation, the second one to test the significance of the final WQS index. In order to estimate the weights, the bootstrap method is applied. For each bootstrap sample (usually $B=2$ total samples) a dataset is created sampling with replacement from the training dataset and the parameters of the model in equation~\ref{eq:wqs} ($\theta=(\beta_0, \beta_1, w_1, \dots, w_c, \boldsymbol{\varphi})$) are estimated through an optimization algorithm where the loglikelihood is used as the objective function:
-$$\hat{\theta}_{WQS} = \argmax_{\theta} \Bigg[l(\theta;y) + \lambda\Bigg(\sum_{i=1}^c w_i - 1 \Bigg)\Bigg]$$
-where $l(\theta;y)$ is the log-likelihood function and $\lambda$ is the lagrangian coefficient associated with the equality constraint in which the weights have to sum to 1. An inequality constraint is also applied in order to impose that $0 \leq w_i \leq 1$.\\
-Once the weights are estimated the model is fitted in order to find the regression coefficients in each ensemble step. After the bootstrap ensemble is complete, the estimated weights are averaged across bootstrap samples to obtain the WQS index:
-$$WQS = \sum_{i=1}^c \bar{w}_iq_i$$
-where $\bar{w}_i =\frac{1}{\sum_{b=1}^B f(\beta_{1(b)})}\sum_{b=1}^B w_{i(b)}f(\beta_{1(b)})$ and $f(\beta_{1(b)})$ is a signal function that we will specify later in the text. Typically weights are estimated in a training set then used to construct a WQS index in a validation set, which can be used to test to evaluate the association and significance of the mixture to the health outcome in a standard generalized linear model, as:
-$$g(\mu) = \beta_0 + \beta_1WQS + \boldsymbol{z'\varphi}$$
-Due to the structure of the model either a positive or a negative direction of the association between the dependent variable and the WQS index has to be chosen; that is, the model is inherently one-directional, in that it tests only for mixture effects positively or negatively associated with a given outcome. In practice analyses should therefore be run twice to test for associations in either direction. The specification of a test for positive or negative association determines the form of the signal function:
-$$f(\hat{\beta}_{1(b)}) = \begin{cases} 1, & \mbox{if } \hat{\beta}_{1(b)} \mbox{ and the chosen direction have the same sign} \\ 0, & \mbox{if } \hat{\beta}_{1(b)} \mbox{ and the chosen direction have different sign} \end{cases}$$
-After the final model is fitted we can test the significance of the $\beta_1$ to see if there is an association between the WQS index and the outcome. In the case the coefficient is significantly different from 0 then we can interpret the weights: the highest values identify the associated components as the relevant contributors in the association. A selection threshold can be decided a priori as $\tau = 1/c$ to identify those chemicals that have a significant weight in the index.\\
-Since the WQS regression can be generalised and applied to multiple types of dependent variables, different objective functions have to be defined to find the optimal weights. For a linear regression the following function is minimised:
-$$\hat{\theta}_{WQS} = \argmin_{\theta} \Bigg[\sum_{i=1}^n\Bigg(y_i - \Bigg(\beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi}\Bigg)\Bigg)^2 + \lambda\Bigg(\sum_{j=1}^c w_j - 1 \Bigg)\Bigg]$$
-For a logistic regression the following likelihood is maximised:
-\begin{eqnarray*}
-\hat{\theta}_{WQS} & = & \argmax_{\theta} \Bigg[\sum_{i=1}^n\Bigg(y_i\times\log\Bigg(\frac{1}{1 + \exp(\beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi})}\Bigg) \\
-  & & + \Bigg(1 - y_i\Bigg)\times\log\Bigg(1 - \beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi}\Bigg)\Bigg]
-\end{eqnarray*}
-The equation to be maximised for a multinomial regression is the following:
-\begin{eqnarray*}
-\hat{\theta}_{WQS} & = & \argmax_{\theta} \Bigg\{\sum_{i=1}^n\Bigg[\sum_{l=1}^{L-1}\Bigg(y_{ij}\Bigg(\beta_{0l} + \beta_{1l}\sum_{j=1}^c  w_{lj}q_{ij} + \boldsymbol{z'\varphi}\Bigg) \\
-  & & - \log\Bigg(1 + \sum_{l=1}^{L-1}\exp\Bigg(\beta_{0l} + \beta_{1l}\sum_{j=1}^c w_{lj}q_{ij} + \boldsymbol{z'\varphi}\Bigg)\Bigg)\Bigg)\Bigg]\Bigg\}
-\end{eqnarray*}
-The objective function used to estimate the weights in a Poisson regression is:
-$$\hat{\theta}_{WQS} = \argmax_{\theta} \Bigg[\sum_{i=1}^n\Bigg(y_i\times\Bigg(\beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi}\Bigg) - \exp\Bigg(\beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi}\Bigg)\Bigg]$$
-In the case of a negative binomial regression the likelihoods to be maximised is:
-\begin{eqnarray*}
-\hat{\theta}_{WQS} & = & \argmax_{\theta} \Bigg[\sum_{i=1}^n\Bigg(y_i\log(\alpha) + y_i\Bigg(\beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi}\Bigg) \\
-  & & - \Bigg(y_i + 1/\alpha\Bigg)\log\Bigg(1 + \alpha\exp\Bigg(\beta_0 + \beta_1\sum_{j=1}^c w_jq_j + \boldsymbol{z'\varphi}\Bigg)\Bigg) \\
-  & & + \log(\Gamma(y_i + 1/\alpha)) - \log(\Gamma(y_i + 1)) - \log(\Gamma(1/\alpha))\Bigg]
-\end{eqnarray*}
-
-
 \section[The gWQS package]{The gWQS package} \label{sec:gwqs}
 
 The \proglang{R} package \pkg{gWQS} extends WQS regression to applications with continuous, categorical and count outcomes. In particular, this package uses the \fct{solnp} function from the \pkg{Rsolnp} package as optimization algorithm to estimates the weights. This function solves general nonlinear programming problems through the augmented Lagrangian multiplier method \citep{Ye:1987, Ghalanos+Theussl:2015}.\\
-We list four examples to illustrate the usage of the package.\\
+We list two examples to illustrate the usage of the package.\\
 
 
 \subsection[Example 1]{Example 1} \label{sec:ex1}
@@ -289,7 +249,7 @@ summary(results2$fit)
 In plot C we show the Receiver Operating Characteristic (ROC) curve related to the predictive model: we can see that the cutoff that is closer to the left-hand border and the top border has around 70\% sensitivity (true positive) and 30\% specificity (false positive).\\
 In this case two more parameters are returned by the \fct{gwqs} function: \code{df_pred}, which is a \code{data.frame} including a first column the actual value of the dependent variable and as a second column the predicted values; and \code{pindex}, the dataset rows identifying the observations used for prediction.\\
 The \code{gwqs} function implements the \code{predict} function to run the predictive model. The following code shows how to reproduce the prediction:
-<<logistic_reg_pred, echo=TRUE, results=hide>>=
+<<logistic_reg_pred, echo=TRUE, results=hide, warnings=FALSE>>=
 # create a dataset exluding the data where we want to apply the prediction
 # and define the group variable to identify the test and validation dataset
 wqs_data$group <- 0
@@ -314,214 +274,6 @@ gg_roc <- ggplot(df_pred, aes(d=y, m=p_y)) + geom_roc(n.cuts = 0) +
 auc_est <- plotROC::calc_auc(gg_roc)
 gg_roc + annotate("text", x=0.75, y=0.25,
                   label=paste0("AUC = ", round(auc_est[, "AUC"], 3)))
-@
-
-
-\subsection[Example 3]{Example 3} \label{sec:ex3}
-
-In this third case we fit a multinomial model (\code{family = "multinomial"}) for categorical data: the outcome is \code{y_multinom}, representing the race of each subject. This modeling strategy creates a distinct logistic model comparing each level of the outcome variable to a reference level (in this case the "Black" category). We chose to create the training and validation dataset and assign to \code{valid_var} the name of the variable that identifies the two datasets (\code{valid_var = "group"}) and to use deciles in the estimate of the `wqs` index (\code{q = 10}). In this case we had to choose two directions for each level of the outcome variable (in this case both positive: \code{b1_pos = c(TRUE, TRUE)}). We also decided to run the bootstrap in parallel on multiple cores (\code{plan_strategy = "multisession"}).
-<<multinom_reg, echo=TRUE, results=hide>>=
-# we create the variable "group" in the dataset to identify the training
-# and validation dataset: we choose 300 observations for the validation
-# dataset and the remaining 200 for the training dataset
-set.seed(123)
-wqs_data$group <- 0
-wqs_data$group[rownames(wqs_data) %in%
-                 sample(rownames(wqs_data), 300)] <- 1
-#
-# we run the logistic model and save the results in the variable
-# "results3"
-results3 <- gwqs(y_multinom ~ wqs, mix_name = toxic_chems,
-                data = wqs_data, q = NULL, validation = 0.6,
-                valid_var = "group", b = 2, b1_pos = c(TRUE, TRUE),
-                b1_constr = FALSE, family = "multinomial", seed = 123,
-                plots = TRUE, tables = TRUE,
-                plan_strategy = "multiprocess")
-#
-# bar plot
-data_plot <- results3$final_weights[order(results3$final_weights[, 2]),]
-pos <- match(data_plot$mix_name, sort(data_plot$mix_name))
-data_plot$mix_name <- factor(data_plot$mix_name,
-                            levels(data_plot$mix_name)[pos])
-data_plot_l <- melt(data_plot, id.vars = "mix_name")
-ggplot(data_plot_l, aes(x = mix_name, y = value, fill = mix_name)) +
-  facet_wrap(~ variable) + geom_bar(stat = "identity", color = "black") +
-  theme_bw() + theme(axis.ticks = element_blank(),
-                     axis.title = element_blank(),
-                     axis.text.x = element_text(color='black'),
-                     legend.position = "none") + coord_flip()
-#
-# scatter plot y vs wqs
-ggplot(results3$y_wqs_df, aes(wqs, y)) +
-  geom_point() + stat_smooth(method = "loess", se = FALSE, size = 1.5) +
-  theme_bw() + facet_wrap(~ level)
-#
-# scatter plot of weights for the two levels of the dependent variable
-ggplot(data_plot, aes_string(names(data_plot)[2], names(data_plot)[3])) +
-  geom_point() + theme_bw() + xlab(names(data_plot)[2]) +
-  ylab(names(data_plot)[3]) + geom_abline(linetype = 2) +
-  ggrepel::geom_text_repel(aes(label=mix_name))
-
-@
-
-\begin{figure}[H]
-<<fig3, echo=FALSE, fig=TRUE>>=
-bar_plot_h <- ggplot(data_plot_l, aes(x = mix_name, y = value, fill = mix_name)) +
-  facet_wrap(~ variable) + geom_bar(stat = "identity", color = "black") +
-  theme_bw() + theme(axis.ticks = element_blank(),
-                     axis.title = element_blank(),
-                     axis.text.x = element_text(color='black'),
-                     legend.position = "none") + coord_flip() + ggtitle("A")
-
-
-yadj_vs_wqs <- ggplot(results3$y_wqs_df, aes(wqs, y)) +
-  geom_point() + stat_smooth(method = "loess", se = FALSE, size = 1.5) +
-  theme_bw() + facet_wrap(~ level) + ggtitle("B")
-
-grid.arrange(bar_plot_h, yadj_vs_wqs, ncol=2)
-@
-\end{figure}
-
-\begin{figure}[H]
-<<fig3b, echo=FALSE, fig=TRUE>>=
-w1_vs_w2 <- ggplot(data_plot, aes_string(names(data_plot)[2], names(data_plot)[3])) +
-  geom_point() + theme_bw() + xlab(names(data_plot)[2]) +
-  ylab(names(data_plot)[3]) + geom_abline(linetype = 2) +
-  ggrepel::geom_text_repel(aes(label=mix_name)) + ggtitle("C")
-
-w1_vs_w2
-@
-\caption{Plots displayed for multinomial outcomes when \code{plots = TRUE}} \label{fig:model3}
-\end{figure}
-
-In Figure~\ref{fig:model3} while plots A and B are the same as in figure~\ref{fig:model1} and ~\ref{fig:model2} but divided by the levels of the outcome variable, C is a scatter plot of the weights. This allows us to compare the magnitude of weights estimated in each model (e.g. "white vs black" or "hispanic vs black")"), with departures from the main diagonal indicating variables that are differentially-weighted for each comparison, e.g. Hispanic vs. Black, or White vs. Black. This is plotted only when the outcome has three levels.\\
-In this case to look at the model results we do not need to use the \code{summary} function but instead use the following command:
-<<multinom_reg_sum, echo=TRUE>>=
-results3$fit$sum_stat
-@
-As we can see from the above results, both the wqs indices for each level are significant (p < 0.001), but, as shown from plot A and C in Figure~\ref{fig:model3}, chemicals have different weights depending on the race.
-
-
-\subsection[Example 4]{Example 4} \label{sec:ex4}
-
-This last example shows how to fit the wqs on count data. The dependent variable taken into account is \code{y_count} and we fit a Poisson regression (\code{family = poisson}). We also run a stratified analysis by sex estimating different weights for males and females setting \code{stratified = "sex_factor"} (we created a new sex factor variable (\code{sex_factor}) since the previous one was numeric (0, 1)).\\
-<<poisson_reg, echo=TRUE, results=hide>>=
-# we create the sex factor variable sex_factor
-wqs_data$sex_factor <- factor(wqs_data$sex, labels = c("F", "M"))
-#
-# we run the poisson model and save the results in the variable
-# "results4"
-results4 <- gwqs(y_count ~ wqs, mix_name = toxic_chems,
-                stratified = "sex_factor", data = wqs_data, q = 10,
-                validation = 0.6, b = 2, b1_pos = TRUE,
-                b1_constr = FALSE, family = poisson, seed = 123,
-                plots = TRUE, tables = TRUE)
-
-@
-
-\begin{figure}[H]
-<<fig4, echo=FALSE, fig=TRUE>>=
-
-w_ord <- order(results4$final_weights$mean_weight)
-mean_weight <- results4$final_weights$mean_weight[w_ord]
-mix_name <- factor(results4$final_weights$mix_name[w_ord], levels = results4$final_weights$mix_name[w_ord])
-data_plot <- data.frame(mean_weight, mix_name)
-bar_plot_h <- ggplot(data_plot, aes(x = mix_name, y = mean_weight, fill = mix_name)) +
-  geom_bar(stat = "identity", color = "black") + theme_bw() +
-  theme(axis.ticks = element_blank(),
-        axis.title = element_blank(),
-        axis.text.x = element_text(color='black'),
-        legend.position = "none") + coord_flip() + ggtitle("A")
-
-
-yadj_vs_wqs <- ggplot(results4$y_wqs_df, aes(wqs, y_adj)) + geom_point() +
-  stat_smooth(method = "loess", se = FALSE, size = 1.5) + theme_bw() + ggtitle("B")
-
-fit_df <- augment(results4$fit)
-res_vs_fitted <- ggplot(fit_df, aes(x = .fitted, y = .resid)) + geom_point() +
-  theme_bw() + xlab("Fitted values") + ylab("Residuals") + ggtitle("C")
-
-grid.arrange(bar_plot_h, yadj_vs_wqs, res_vs_fitted, ncol=2, nrow = 2, layout_matrix = cbind(c(1,1), c(2,3)))
-@
-\caption{Plots displayed for count outcome when \code{plots = TRUE}} \label{fig:model4}
-\end{figure}
-
-The results of the model are shown in the table below:
-<<poisson_reg_sum, echo=TRUE>>=
-summary(results4$fit)
-@
-We notice that there is a significant positive association between the wqs index and the dependent variable. Since we stratified by sex, we have an estimate of each weight for males and females and we can see how the weights differ between the two genders: we have a good agreement for some weights (e.g. \code{log_LBX138LA} has an high impact in both males and females) and differences for others (e.g. \code{log_LBXF07LA} is 4.5\% for males being the 3rd highest weight while for females it has a lower impact (1.3\% as the 12th highest weight)).\\
-The following test allows us to test for overdisperions of the \code{y_count} data:
-<<poisson_disp_test, echo=TRUE>>=
-library(AER)
-mean(wqs_data$y_count)
-var(wqs_data$y_count)
-AER::dispersiontest(results4$fit)
-@
-Since the test indicates the data are overdispersed we fit a quasi-Poisson or a negative binomial regression (\code{family = "quasipoisson"} or \code{family = "negbin"} respectively):\\
-<<quasi_poisson_reg, echo=TRUE, results=hide>>=
-# we run the quasi-poisson model and save the results in the variable
-# "results5"
-results5 <- gwqs(y_count ~ wqs, mix_name = toxic_chems,
-                data = wqs_data, q = 10, validation = 0.6, b = 2,
-                b1_pos = TRUE, b1_constr = FALSE, family = quasipoisson,
-                seed = 123)
-@
-
-<<quasi_poisson_reg_sum, echo=TRUE>>=
-summary(results5$fit)
-@
-
-A zero-inflated model can be fitted for the Poisson and negative binomial regression setting \code{zeroinfl = TRUE} and choosing a link function for the binomial process (we can choose among \code{"logit", "probit", "cloglog", "cauchit", "log"}). Here is shown the case of the negative binomial zero-inflated model using a \code{"logit"} link function for the binomial process (\code{zilink = "logit"}). To test the hypothesis that different covariates regulate the count and the binomial parts we write the formula as in the example below where the variables at the right of the symbol \code{"|"} are those included in the binomial process; otherwise we specify the formula in the usual way and all the variables will be included in both parts. Before fitting the model we generate a variable from a zero inflated negative binomial. In the following model \code{wqs} and \code{sex} are included in the count process while \code{new_var} is considered in the binomial process. Only the code for the residual vs fitted values scatter plot is reported since it is slightly different from the previous ones:
-<<nb_reg, echo=TRUE, results=hide>>=
-# generate new variable from normal distribution
-set.seed(123)
-wqs_data$new_var <- rnorm(500)
-wqs_data$y_zinb <- rzinegbin(500, pstr0 = 0.3, mu = 3, size = 10)
-#
-# we run the zero-inflated negative binomial model and save the results in the variable
-# "results6"
-results6 <- gwqs(y_zinb ~ wqs + sex | new_var, mix_name = toxic_chems,
-                data = wqs_data, q = 10, validation = 0.6, b = 2,
-                zero_infl = TRUE, zilink = "logit", b1_pos = FALSE,
-                b1_constr = FALSE, family = "negbin", seed = 1234,
-                plots = TRUE, tables = TRUE)
-#
-# scatter plot residuals vs fitted values
-fit_df <- data.frame(.fitted = results6$fit$fitted.values,
-                    .resid = results6$fit$residuals)
-ggplot(fit_df, aes(x = .fitted, y = .resid)) + geom_point() +
-  theme_bw() + xlab("Fitted values") + ylab("Residuals")
-
-@
-
-\begin{figure}[H]
-<<fig5, echo=FALSE, fig=TRUE>>=
-w_ord <- order(results6$final_weights$mean_weight)
-mean_weight <- results6$final_weights$mean_weight[w_ord]
-mix_name <- factor(results6$final_weights$mix_name[w_ord], levels = results6$final_weights$mix_name[w_ord])
-data_plot <- data.frame(mean_weight, mix_name)
-bar_plot_h <- ggplot(data_plot, aes(x = mix_name, y = mean_weight, fill = mix_name)) +
-  geom_bar(stat = "identity", color = "black") + theme_bw() +
-  theme(axis.ticks = element_blank(),
-        axis.title = element_blank(),
-        axis.text.x = element_text(color='black'),
-        legend.position = "none") + coord_flip() + ggtitle("A")
-
-yadj_vs_wqs <- ggplot(results6$y_wqs_df, aes(wqs, y_adj)) + geom_point() +
-  stat_smooth(method = "loess", se = FALSE, size = 1.5) + theme_bw() + ggtitle("B")
-
-fit_df <- data.frame(.fitted = results6$fit$fitted.values, .resid = results6$fit$residuals)
-res_vs_fitted <- ggplot(fit_df, aes(x = .fitted, y = .resid)) + geom_point() +
-  theme_bw() + xlab("Fitted values") + ylab("Residuals") + ggtitle("C")
-
-grid.arrange(bar_plot_h, yadj_vs_wqs, res_vs_fitted, ncol=2)
-@
-\caption{Plots displayed for count outcome when \code{plots = TRUE}} \label{fig:model6}
-\end{figure}
-From the summary table below we note the estimate of the model; in this case the results related to both the count and the binomial process are presented.
-<<nb_reg_sum, echo=TRUE>>=
-summary(results6$fit)
 @
 
 

@@ -1,6 +1,7 @@
-
 # starting message
-.onAttach <- function(...) packageStartupMessage("Welcome to Weighted Quantile Sum (WQS) Regression.\nIf you are using a Mac you have to install XQuartz.\nYou can download it from: https://www.xquartz.org/\n")
+.onAttach <- function(...) packageStartupMessage("Welcome to Weighted Quantile Sum (WQS) Regression.
+If you are using a Mac you have to install XQuartz.
+You can download it from: https://www.xquartz.org/\n")
 
 
 # function to remove terms from formula
@@ -321,7 +322,7 @@ model.fit <- function(w, bdtf, bQ, family, zilink, formula, ff, weights, b1_pos,
   }
   else wqs <- bdtf$wqs <- as.numeric(bQ%*%w)
 
-  if(zero_infl) m_f <- zeroinfl(ff, bdtf, dist = family$family, link = zilink$name)
+  if(zero_infl) m_f <- pscl::zeroinfl(ff, bdtf, dist = family$family, link = zilink$name)
   else{
     if(family$family == "multinomial") {
       LL <- function(p){
@@ -339,7 +340,7 @@ model.fit <- function(w, bdtf, bQ, family, zilink, formula, ff, weights, b1_pos,
       Standard_Error = sqrt(diag(solve(nlm_out$hessian)))
       stat = Estimate/Standard_Error
       p_value = 2*pnorm(-abs(stat))
-      sum_stat <- data.frame(Estimate = Estimate, Standard_Error = Standard_Error, stat = stat, p_value = p_value)
+      sum_stat <- data.frame(Estimate = Estimate, Standard_Error = Standard_Error, stat = stat, p_value = p_value, stringsAsFactors = TRUE)
       rownames(sum_stat) = Xnames
       m_f = list(nlm_out, sum_stat)
       names(m_f) = c("nlm_out", "sum_stat")
@@ -508,7 +509,7 @@ predict_f = function(Q, dtf, w, m_f, formula){
   dtf$wqs = as.numeric(Q%*%w)
   pred = predict(m_f, newdata = dtf, type = "response")
   y = model.response(model.frame(formula, dtf), "any")
-  df_pred = data.frame(y = y, p_y = pred)
+  df_pred = data.frame(y = y, p_y = pred, stringsAsFactors = TRUE)
 
   return(df_pred)
 }
@@ -548,7 +549,7 @@ plots <- function(data_plot, y_adj_wqs_df, q, mix_name, mean_weight, fit, family
   print(yadj_vs_wqs)
 
   if(!(family$family %in% c("binomial", "multinomial"))){
-    if(zero_infl) fit_df = data.frame(.fitted = fit$fitted.values, .resid = fit$residuals)
+    if(zero_infl) fit_df = data.frame(.fitted = fit$fitted.values, .resid = fit$residuals, stringsAsFactors = TRUE)
     else fit_df = augment(fit)
     res_vs_fitted = ggplot(fit_df, aes_string(x = ".fitted", y = ".resid")) + geom_point() + theme_bw() +
       xlab("Fitted values") + ylab("Residuals")
@@ -566,7 +567,7 @@ plots <- function(data_plot, y_adj_wqs_df, q, mix_name, mean_weight, fit, family
     if(class(df_roc$y) == "character") df_roc$y = factor(df_roc$y)
     if(class(df_roc$y) == "factor") df_roc$y <- as.numeric(df_roc$y != levels(df_roc$y)[1])
     gg_roc = suppressWarnings(ggplot(df_roc, aes_string(d="y", m="p_y")) + geom_roc(n.cuts = 0) +
-      style_roc(xlab = "1 - Specificity", ylab = "Sensitivity"))
+                                style_roc(xlab = "1 - Specificity", ylab = "Sensitivity"))
     auc_est = calc_auc(gg_roc)
     gg_roc = gg_roc + annotate("text", x=0.75, y=0.25, label=paste0("AUC = ", round(auc_est[, "AUC"], 3)))
 
@@ -582,7 +583,7 @@ tables <- function(final_weight, mf, family, n_levels, zero_infl){
     mf_df = signif(mf$sum_stat, 3)
   }
   else{
-    final_weight <- data.frame(Mix_name = final_weight$mix_name, Final_weight = signif(final_weight$mean_weight, 3))
+    final_weight <- data.frame(Mix_name = final_weight$mix_name, Final_weight = signif(final_weight$mean_weight, 3), stringsAsFactors = TRUE)
     if(zero_infl){
       mf_df_count = as.data.frame(signif(coef(summary(mf))$count, 3))
       mf_df_zero = as.data.frame(signif(coef(summary(mf))$zero, 3))
@@ -593,9 +594,8 @@ tables <- function(final_weight, mf, family, n_levels, zero_infl){
   }
 
   if(zero_infl) print(kable_styling(kable(mf_df, row.names = TRUE)) %>%
-    group_rows("Count model", 1, dim(mf_df_count)[1]) %>%
-    group_rows("Zero-inflation model", dim(mf_df_count)[1]+1, dim(mf_df_count)[1]+dim(mf_df_zero)[1]))
+                        group_rows("Count model", 1, dim(mf_df_count)[1]) %>%
+                        group_rows("Zero-inflation model", dim(mf_df_count)[1]+1, dim(mf_df_count)[1]+dim(mf_df_zero)[1]))
   else print(kable_styling(kable(mf_df, row.names = TRUE)))
   print(kable_styling(kable(final_weight, row.names = FALSE)))
 }
-
