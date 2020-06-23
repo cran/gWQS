@@ -1,0 +1,203 @@
+---
+title: "How to use gWQS package"
+author: "Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings"
+date: "`r Sys.Date()`"
+output: html_document
+vignette: >
+  %\VignetteIndexEntry{How to use gWQS package}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
+---
+
+```{r setup, include=FALSE}
+# knitr::opts_chunk$set(cache = TRUE)
+
+library(gWQS)
+library(ggplot2)
+library(cowplot)
+library(knitr)
+library(kableExtra)
+```
+
+# Introduction
+
+Weighted Quantile Sum (WQS) regression is a statistical model for multivariate regression in high-dimensional datasets commonly encountered in environmental exposures, epi/genomics, and metabolomic studies, among others. The model constructs a weighted index estimating the mixed effect of all predictor variables on an outcome, which may then be used in a regression model with relevant covariates to test the association of the index with a dependent variable or outcome. The contribution of each individual predictor to the overall index effect may then be assessed by the relative strength of the weights the model assigns to each variable.
+
+The gWQS package extends WQS regression to applications with continuous and categorical outcomes and implements the random subset WQS and the repeated holdout WQS. In practical terms, the primary outputs of an analysis will be the parameter estimates and significance tests for the overall index effect of predictor variables, and the estimated weights assigned to each predictor, which identify the relevant contribution of each variable to the relationship between the WQS index and the outcome variable. 
+
+For additional theoretical background on WQS regression and its extensions, see the references provided below.
+
+
+# How to use the `gWQS` package
+
+The main functions of the `gWQS` package is `gwqs` and `gwqsrh`. The first extends WQS regression to applications with continuous, categorical and count outcomes and includes the option `rs` that allows to apply a random subset implementation of WQS; the second relies on the `gwqs` function and extends the method to a repeated holdout validation procedure. In this vignette we will only show the application of WQS to a continuous outcome. We created the `wqs_data` dataset (available once the package is installed and loaded) to show how to use this function. These data reflect 59 exposure concentrations simulated from a distribution of 34 PCB exposures and 25 phthalate biomarkers measured in subjects participating in the NHANES study (2001-2002). Additionally, 8 outcome measures were simulated applying different distributions and fixed beta coefficients to the predictors. In particular `y` and `yLBX` were simulated from a normal distribution, `ybin` and `ybinLBX` from a binomial distribution, `ymultinom` and `ymultinomLBX` from a multinomial distribution and `ycount` and `ycountLBX` from a Poisson distribution. The `sex` variable was also simulated to allow to adjust for a covariate in the model. This dataset can thus be used to test the `gWQS` package by analyzing the mixed effect of the simulated chemicals on the different outcomes, with adjustments for covariates. 
+
+
+## Example 1
+
+The following script calls a WQS model for a continuous outcome using the function `gwqs` that returns an object of class `gwqs`; the three functions `gwqs_barplot`, `gwqs_scatterplot` and `gwqs_fitted_vs_resid` allows to plot the figures shown in figure \@ref(fig:model1):
+
+```{r, echo=TRUE, eval=FALSE, message=FALSE, warning=FALSE}
+
+# we save the names of the mixture variables in the variable "PCBs"
+PCBs <- names(wqs_data)[1:34]
+# we run the model and save the results in the variable "results"
+results <- gwqs(yLBX ~ wqs, mix_name = PCBs, data = wqs_data, 
+                q = 10, validation = 0.6, b = 2, b1_pos = TRUE, 
+                b1_constr = FALSE, family = "gaussian", seed = 2016)
+# bar plot
+gwqs_barplot(results)
+# scatter plot y vs wqs
+gwqs_scatterplot(results)
+# scatter plot residuals vs fitted values
+gwqs_fitted_vs_resid(results)
+
+```
+
+```{r model1, results='asis', message=FALSE, warning=FALSE, fig.show='hold', fig.height=8, fig.width=8, echo=FALSE, fig.cap="Plots displayed for linear outcomes."}
+
+PCBs <- names(wqs_data)[1:34]
+results <- gwqs(yLBX ~ wqs, mix_name = PCBs, data = wqs_data, 
+                q = 10, validation = 0.6, b = 2, b1_pos = TRUE, 
+                b1_constr = FALSE, family = "gaussian", seed = 2016)
+
+w_ord <- order(results$final_weights$mean_weight)
+mean_weight <- results$final_weights$mean_weight[w_ord]
+mix_name <- factor(results$final_weights$mix_name[w_ord], 
+                   levels = results$final_weights$mix_name[w_ord])
+data_plot <- data.frame(mean_weight, mix_name)
+bar_plot_h <- ggplot(data_plot, aes(x = mix_name, y = mean_weight)) + 
+  geom_bar(stat = "identity", color = "black") + theme_bw() +
+  theme(axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        axis.text.x = element_text(color='black'),
+        legend.position = "none") + coord_flip() + ggtitle("A") +
+  geom_hline(yintercept = 1/length(PCBs), linetype="dashed", color = "red")
+
+yadj_vs_wqs <- ggplot(results$y_wqs_df, aes(wqs, y_adj)) + geom_point() + 
+  stat_smooth(method = "loess", se = FALSE, size = 1.5) + theme_bw() + ggtitle("B")
+
+fit_df <- data.frame(fitted = fitted(results), 
+                     resid = residuals(results, type = "response"))
+res_vs_fitted <- ggplot(fit_df, aes(x = fitted, y = resid)) + geom_point() + 
+  theme_bw() + xlab("Fitted values") + ylab("Residuals") + ggtitle("C")
+
+plot_grid(bar_plot_h, yadj_vs_wqs, res_vs_fitted, nrow = 2, ncol = 2)
+
+```
+
+This WQS model tests the relationship between our dependent variable, `y`, and a WQS index estimated from ranking exposure concentrations in deciles (`q = 10`); in the `gwqs` formula the `wqs` term must be included as if a `wqs` variable was present in the dataset. The data were divided in 40% of the dataset for training and 60% for validation (`validation = 0.6`), and 2 bootstrap samples (`b = 2`) for parameter estimation were assigned (in practical applications we suggest at least 100 bootstrap samples to be used). Because WQS provides a unidirectional evaluation of mixture effects, we first examined weights derived from bootstrap models where $\beta_1$ was positive (`b1_pos = TRUE`); we could test for negative associations by setting that parameter to be false (`b1_pos = FALSE`). We can also choose to constrain the $\beta_1$ to be positive (`b1_pos = TRUE` and `b1_constr = TRUE`) or negative (`b1_pos = FALSE` and `b1_constr = TRUE`) when we estimate the weights; in the case of example 1 we are not applying a constraint to $\beta_1$. We linked our model to a gaussian distribution to test for relationships between the continuous outcome and exposures (`family = "gaussian"`), and fixed the seed to 2016 for reproducible results (`seed = 2016`).
+
+Figure \@ref(fig:model1) A is a barplot showing the weights assigned to each variable ordered from the highest weight to the lowest. These results indicate that the variables `LBXF07LA`, `LBXD02LA` and `LBX138LA` are the largest contributors to this mixture effect. The dashed red line represents the cutoff $\tau$ (by default equal to the inverse of the number of elements in the mixture as suggested in Carrico et al. 2014) to discriminate which element has a significant weight greater than zero.
+
+In plot B of figure \@ref(fig:model1) we have a representation of the wqs index vs the outcome (adjusted for the model residual when covariates are included in the model) that shows the direction and the shape of the association between the exposure and the outcome. For example, in this case we can observe a linear and positive relationship between the mixture and the `yLBX` variable.
+
+In plot C a diagnostic graph of the residuals vs the fitted values is shown to check if they are randomly spread around zero or if there is a trend. All these plots are built using the `ggplot2` package.
+
+To test the statistical significance of the association between the variables in the model, the following code has to be run as for a classical `R` regression function:
+
+```{r, echo=TRUE, eval=TRUE}
+
+summary(results)
+
+```
+
+This result tells us that the association is positive and statistically significant (`p<2e-16`).
+
+To have the exact values of the estimated weights we can apply the command `results$final_weights`. The following code shows the first six highest weights; the full list of weights can be called by omitting the head function:
+
+```{r, echo=TRUE, eval=TRUE}
+
+head(results$final_weights)
+
+```
+
+These same tables are also shown in the Viewer window through the functions `gwqs_summary_tab` and `gwqs_weights_tab` respectively. Both these two functions use the package `kableExtra` to produce the output. The output (table \@ref(tab:sum1) and \@ref(tab:w1)) and respective code is shown below:
+
+```{r, echo=TRUE, eval=FALSE}
+
+gwqs_summary_tab(results)
+
+```
+
+```{r sum1, results='asis', echo=FALSE}
+
+gwqs_summary_tab(results, caption = "Summary results of the WQS regression for linear outcomes.")
+
+```
+
+```{r, echo=TRUE, eval=FALSE}
+
+mf_df <- as.data.frame(signif(coef(summary(results$fit)), 3))
+kable_styling(kable(mf_df, row.names = TRUE))
+
+```
+
+```{r, echo=TRUE, eval=FALSE}
+
+gwqs_weights_tab(results)
+
+```
+
+```{r w1, echo=FALSE, eval=TRUE}
+
+final_weight <- results$final_weights
+final_weight[, -1] <- signif(final_weight[, -1], 3)
+scroll_box(kable_styling(kable(final_weight, row.names = FALSE, caption = "Weights table of the WQS regression for linear outcomes.")), height = "400px")
+
+```
+
+```{r, echo=TRUE, eval=FALSE}
+
+final_weight <- results$final_weights
+final_weight[, -1] <- signif(final_weight[, -1], 3)
+kable_styling(kable(final_weight, row.names = FALSE))
+
+```
+
+The `gwqs` function gives back other outputs like the vector of the values that indicate whether the solver has converged (0) or not (1) (`results$conv`), the matrix with all the estimated weights and the associated $\beta_1$, standard errors, statistics and p-values for each bootstrap sample (`results$bres`), the vector of the estimated `wqs` index (`results$wqs`), the list of vectors containing the cutoffs used to determine the quantiles of each variable in the mixture (`results$qi`), the list of vectors containing the rows of the subjects included in each bootstrap dataset (`results$bindex`), the rows identifying the subjects used to estimate the weights in each bootstrap (`results$tindex`), the rows identifying the subjects used to estimate the parameters of the final model (`results$vindex`), the vector of the values of the objective function at the optima parameter estimates obtained at each bootstrap step (`results$objfn_values`) and any messages from the `optim` function (`results$optim_messages`).
+
+The following script allows to reproduce the figures that are automatically generated using the plots functions:
+
+```{r, echo=TRUE, eval=FALSE}
+# bar plot
+w_ord <- order(results$final_weights$mean_weight)
+mean_weight <- results$final_weights$mean_weight[w_ord]
+mix_name <- factor(results$final_weights$mix_name[w_ord], 
+                   levels = results$final_weights$mix_name[w_ord])
+data_plot <- data.frame(mean_weight, mix_name)
+ggplot(data_plot, aes(x = mix_name, y = mean_weight)) + 
+  geom_bar(stat = "identity", color = "black") + theme_bw() +
+  theme(axis.ticks = element_blank(),
+        axis.title = element_blank(),
+        axis.text.x = element_text(color='black'),
+        legend.position = "none") + coord_flip() +
+  geom_hline(yintercept = 1/length(PCBs), linetype="dashed", color = "red")
+#
+# scatter plot y vs wqs
+ggplot(results$y_wqs_df, aes(wqs, y_adj)) + geom_point() + 
+  stat_smooth(method = "loess", se = FALSE, size = 1.5) + theme_bw()
+#
+# scatter plot residuals vs fitted values
+fit_df <- data.frame(fitted = fitted(results), 
+                     resid = residuals(results, type = "response"))
+ggplot(fit_df, aes(x = fitted, y = resid)) + geom_point() + 
+  theme_bw() + xlab("Fitted values") + ylab("Residuals")
+```
+
+
+# References
+
+Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum regression for highly correlated data in a risk analysis setting. J Agricul Biol Environ Stat. 2014:1-21. ISSN: 1085-7117. DOI: 10.1007/ s13253-014-0180-3. http://dx.doi.org/10.1007/s13253-014-0180-3.
+
+Czarnota J, Gennings C, Colt JS, De Roos AJ, Cerhan JR, Severson RK, Hartge P, Ward MH, Wheeler D. 2015. Analysis of environmental chemical mixtures and non-Hodgkin lymphoma risk in the NCI-SEER NHL study. Environmental Health Perspectives.
+
+Czarnota J, Gennings C, Wheeler D. 2015. Assessment of weighted quantile sum regression for modeling chemical mixtures and cancer risk. Cancer Informatics, 2015:14(S2) 159-171.
+
+Curtin P, Kellogg J, Cech N, and Gennings C. A random subset implementation of weighted quantile sum (wqsrs) regression for analysis of high-dimensional mixtures. Communications in Statistics - Simulation and Computation, 0(0):1–16, 2019. doi: 10.1080/03610918.2019.1577971.
+
+Tanner EM, Bornehag CG, and Gennings C. Repeated holdout validation for weighted quantile sum regression. MethodsX, 6:2855 – 2860, 2019. doi: https://doi.org/10.1016/j.mex.2019.11.008.
+
+# Acknowledgements
+
+This package was developed at the CHEAR Data Center (Dept. of Environmental Medicine and Public Health, Icahn School of Medicine at Mount Sinai) with funding and support from NIEHS (U2C ES026555-01) with additional support from the Empire State Development Corporation.
