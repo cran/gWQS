@@ -39,7 +39,7 @@ gwqs_rank(data, mix_name, q)
 \item{tau}{A number identifying the cutoff for the significant weights. Is tau is missing then reciprocal of
 the number of elements in the mixture is considered. To avoid printing the threshold line set \code{tau = NULL}.}
 
-\item{...}{Further arguments to be passed.}
+\item{...}{Further arguments to be passed to the function.}
 
 \item{sumtype}{Type of summary statistic to be used: "norm" takes the mean of the estimated parameters on the
 validation sets and the 95% CI assuming a normal distribution of the parameters, while "perc" uses the median

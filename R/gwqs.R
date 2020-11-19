@@ -56,6 +56,7 @@
 #' (you can choose among \code{"BFGS", "Nelder-Mead", "CG", "SANN"}, \code{"BFGS"} is the default).
 #' See \code{\link[stats]{optim}} for details.
 #' @param control The control list of optimization parameters. See \code{\link[stats]{optim}} for details.
+#' @param ... Additional arguments to be passed to the function
 #'
 #' @details
 #' \code{gWQS} uses the \code{glm} function in the \bold{stats} package to fit the linear, logistic,
@@ -179,7 +180,7 @@
 #'              zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
 #'              plan_strategy = "sequential",
 #'              optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-#'              control = list(trace = FALSE, maxit = 1000, reltol = 1e-8))
+#'              control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
 
 gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_var,
                  b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE, q = 4,
@@ -188,7 +189,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
                  zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
                  plan_strategy = "sequential",
                  optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-                 control = list(trace = FALSE, maxit = 1000, reltol = 1e-8)){
+                 control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...){
 
   wqsGaussBin <- function(initp, kw, bdtf, Y, offset, Q, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, wghts, stratified, b1_pos, b1_constr){
 
@@ -310,6 +311,9 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   dtf[[1]] <- as.name("selectdatavars")
   dtf <- eval(dtf, parent.frame())
 
+  l <- list(...)
+  solve_dir_issue <- ifelse(is.null(l$solve_dir_issue), FALSE, l$solve_dir_issue)
+
   # defining quantile variables
   if (is.null(q)) {Q = as.matrix(dtf[, mix_name]); qi = NULL}
   else {
@@ -328,7 +332,11 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   else stratified <- NULL
 
   if(!is.null(seed) & !is.numeric(seed)) stop("seed must be numeric or NULL\n")
-  if(!is.null(seed)) set.seed(seed)
+  if(!is.null(seed)){
+    set.seed(seed)
+    fseed <- TRUE
+  }
+  else fseed <- FALSE
 
   N <- nrow(dtf)
 
@@ -439,8 +447,11 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
       if(rs) bres[[i]][mix_name][is.na(bres[[i]][mix_name])] <- 0
       if(b1_pos[i]) w_t = apply(bres[[i]][bres[[i]]$b1 > 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[[i]][bres[[i]]$b1 > 0 & conv == 0, "stat"]))
       else if(!b1_pos[i]) w_t = apply(bres[[i]][bres[[i]]$b1 < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[[i]][bres[[i]]$b1 < 0 & conv == 0, "stat"]))
-      if (all(is.nan(w_t)))
-        stop(paste0("There are no ", ifelse(b1_pos[i], "positive", "negative"), " b1 in the bootstrapped models for ", strata_names[i], "\n"))
+      if (all(is.nan(w_t))){
+        w_t <- 1/apply(bres[[i]][, mix_name], 2, weighted.mean, signal(bres[[i]][, "stat"]))/sum(1/apply(bres[[i]][, mix_name], 2, weighted.mean, signal(bres[[i]][, "stat"])))
+        if(solve_dir_issue) warning(paste0("No models converged in ", ifelse(b1_pos[i], "positive", "negative"), " direction for ", strata_names[i], "\n"))
+        else stop(paste0("There are no ", ifelse(b1_pos[i], "positive", "negative"), " b1 in the bootstrapped models for ", strata_names[i], "\n"))
+      }
       return(w_t)
     })
     mean_weight <- list.cbind(mean_weight)
@@ -455,8 +466,11 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
       if(b1_pos) mean_weight = apply(bres[bres$b1 > 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 > 0 & conv == 0, "stat"]))
       else mean_weight = apply(bres[bres$b1 < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 < 0 & conv == 0, "stat"]))
     }
-    if(all(is.nan(mean_weight)))
-      stop("There are no ", ifelse(b1_pos, "positive", "negative"), " b1 in the bootstrapped models\n")
+    if(all(is.nan(mean_weight))){
+      mean_weight <- 1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"]))/sum(1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"])))
+      if(solve_dir_issue) warning(paste0("No models converged in ", ifelse(b1_pos, "positive", "negative"), " direction\n"))
+      else stop("There are no ", ifelse(b1_pos, "positive", "negative"), " b1 in the bootstrapped models\n")
+    }
   }
 
   # fit the final model with the estimated weights
@@ -543,7 +557,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
 #'                zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
 #'                plan_strategy = "sequential",
 #'                optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-#'                control = list(trace = FALSE, maxit = 1000, reltol = 1e-8))
+#'                control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
 
 gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, valid_var,
                    rh = 100, b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE,
@@ -552,7 +566,7 @@ gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, vali
                    zilink = c("logit", "probit", "cloglog", "cauchit", "log"),
                    seed = NULL, plan_strategy = "sequential",
                    optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-                   control = list(trace = FALSE, maxit = 1000, reltol = 1e-8)){
+                   control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...){
 
   if(is.character(family)){
     if(family %in% c("multinomial", "negbin")) family <- list(family = family)
@@ -572,8 +586,8 @@ gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, vali
   }
   else zilink <- ff <- NULL
 
-  cl <- match.call()
-  mc <- match.call(expand.dots = FALSE)
+  mc <- cl <- match.call()
+  # mc <- match.call(expand.dots = FALSE)
   m <- match(c("data", "na.action", "formula", "mix_name", "weights", "stratified", "valid_var"), names(mc), 0)
   dtf <- mc[c(1, m)]
   dtf[[2]] <- data
@@ -617,8 +631,8 @@ gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, vali
   set.seed(seed)
   gwqslist <- lapply(rh, function(i){
     if(is.list(rh)){
-      dtf$group <- 0
-      dtf$group[i] <- 1
+      mc$data$group <- 0
+      mc$data$group[i] <- 1
     }
     gwqsout <- eval(mc)
     return(gwqsout)
@@ -1428,7 +1442,7 @@ residuals.gwqsrh <- function(object, sumtype = c("norm", "perc"), type = c("pear
 #' @param mix_name Vector containing element names included in the mixture.
 #' @param q An \code{integer} to specify how mixture variables will be ranked, e.g. in quartiles
 #' (\code{q = 4}), deciles (\code{q = 10}), or percentiles (\code{q = 100}).
-#' @param ... Further arguments to be passed.
+#' @param ... Further arguments to be passed to the function.
 #'
 #' @details
 #' The \code{gwqs_barplot}, \code{gwqs_scatterplot}, \code{gwqs_fitted_vs_resid}, \code{gwqs_levels_scatterplot},

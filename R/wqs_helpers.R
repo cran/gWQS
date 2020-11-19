@@ -237,8 +237,8 @@ model.fit <- function(w, bdtf, bQ, family, zilink, formula, ff, wghts, stratifie
       m_f = list(nlm_out, coefficients)
       names(m_f) = c("nlm_out", "coefficients")
     }
-    else if(family$family == "negbin") m_f = glm.nb(formula, data = bdtf)
-    else m_f = glm(formula, data = bdtf, family = family)
+    else if(family$family == "negbin") m_f = glm.nb(formula, data = bdtf, weights = wghts)
+    else m_f = glm(formula, data = bdtf, family = family, weights = wghts)
   }
 
   mf_out = list(wqs = wqs, m_f = m_f)

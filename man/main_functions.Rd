@@ -12,7 +12,7 @@ gwqs(formula, data, na.action, weights, mix_name, stratified, valid_var, b = 100
              zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
              plan_strategy = "sequential",
              optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-             control = list(trace = FALSE, maxit = 1000, reltol = 1e-8))
+             control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
 
 gwqsrh(formula, data, na.action, weights, mix_name, stratified, valid_var, rh = 100,
                b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE, q = 4,
@@ -21,7 +21,7 @@ gwqsrh(formula, data, na.action, weights, mix_name, stratified, valid_var, rh = 
                zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
                plan_strategy = "sequential",
                optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-               control = list(trace = FALSE, maxit = 1000, reltol = 1e-8))
+               control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
 }
 \arguments{
 \item{formula}{An object of class \code{formula} specifying the relationship to be tested. The \code{wqs}
@@ -98,6 +98,8 @@ in the mixture is taken.}
 See \code{\link[stats]{optim}} for details.}
 
 \item{control}{The control list of optimization parameters. See \code{\link[stats]{optim}} for details.}
+
+\item{...}{Additional arguments to be passed to the function}
 
 \item{rh}{Number of repeated holdout validations. This option is only available for \code{gwqsrh} function.}
 }
