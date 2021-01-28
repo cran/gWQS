@@ -161,21 +161,28 @@ subset of the total predictor set. For further details please see the vignette
 ("How to use gWQS package") and the references below.
 }
 \examples{
-# we save the names of the mixture variables in the variable "toxic_chems"
+# we save the names of the mixture variables in the variable
+# "toxic_chems"
 toxic_chems = names(wqs_data)[1:34]
 
-# To run a linear model and save the results in the variable "results". This linear model
-# (family = gaussian) will rank/standardize variables in quartiles (q = 4), perform a
-# 40/60 split of the data for training/validation (validation = 0.6), and estimate weights
-# over 2 bootstrap samples (b = 2; in practical applications at least 100 bootstraps
-# should be used). Weights will be derived from mixture effect parameters that are positive
-# (b1_pos = TRUE). A unique seed was specified (seed = 2016) so this model will be
-# reproducible, and plots describing the variable weights and linear relationship will be
-# generated as output (plots = TRUE). In the end tables describing the weights values and
-# the model parameters with the respectively statistics are generated in the plots window
-# (tables = TRUE):
-results = gwqs(y ~ wqs, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
-               b = 2, b1_pos = TRUE, b1_constr = FALSE, family = gaussian, seed = 2016)
+# To run a linear model and save the results in the variable
+# "results". This linear model (family = gaussian) will
+# rank/standardize variables in deciles (q = 10), perform a
+# 40/60 split of the data for training/validation
+# (validation = 0.6), and estimate weights over 2 bootstrap
+# samples (b = 2; in practical applications at least 100
+# bootstraps should be used). Weights will be derived from
+# mixture effect parameters that are positive (b1_pos = TRUE).
+# A unique seed was specified (seed = 2016) so this model will
+# be reproducible, and plots describing the variable weights
+# and linear relationship will be generated as output
+# (plots = TRUE). In the end tables describing the weights
+# values and the model parameters with the respectively
+# statistics are generated in the plots window (tables = TRUE):
+results = gwqs(yLBX ~ wqs, mix_name = toxic_chems,
+               data = wqs_data, q = 10, validation = 0.6,
+               b = 2, b1_pos = TRUE, b1_constr = FALSE,
+               family = gaussian, seed = 2016)
 
 # to test the significance of the covariates
 summary(results)
@@ -184,20 +191,19 @@ summary(results)
 \references{
 Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighted quantile sum
 regression for highly correlated data in a risk analysis setting. J Biol Agricul Environ Stat.
-2014:1-21. ISSN: 1085-7117. DOI: 10.1007/ s13253-014-0180-3.
-\url{http://dx.doi.org/10.1007/s13253-014-0180-3}.\cr
+2014:1-21. ISSN: 1085-7117. \doi{10.1007/s13253-014-0180-3}.\cr
 
 Czarnota J, Gennings C, Colt JS, De Roos AJ, Cerhan JR, Severson RK, Hartge P, Ward MH,
 Wheeler D. 2015. Analysis of environmental chemical mixtures and non-Hodgkin lymphoma risk in the
-NCI-SEER NHL study. Environmental Health Perspectives, DOI:10.1289/ehp.1408630.\cr
+NCI-SEER NHL study. Environmental Health Perspectives, \doi{10.1289/ehp.1408630}.\cr
 
 Czarnota J, Gennings C, Wheeler D. 2015. Assessment of weighted quantile sum regression for modeling
 chemical mixtures and cancer risk. Cancer Informatics,
-2015:14(S2) 159-171 DOI: 10.4137/CIN.S17295.\cr
+2015:14(S2) 159-171 \doi{10.4137/CIN.S17295}.\cr
 
 Brunst KJ, Sanchez Guerra M, Gennings C, et al. Maternal Lifetime Stress and Prenatal Psychological
 Functioning and Decreased Placental Mitochondrial DNA Copy Number in the PRISM Study.
-Am J Epidemiol. 2017;186(11):1227-1236. doi:10.1093/aje/kwx183.\cr
+Am J Epidemiol. 2017;186(11):1227-1236. \doi{10.1093/aje/kwx183}.\cr
 }
 \seealso{
 \link[stats]{glm}, \link[MASS]{glm.nb}, \link[nnet]{multinom}, \link[pscl]{zeroinfl}.
