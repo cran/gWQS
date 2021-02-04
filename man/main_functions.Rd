@@ -141,7 +141,10 @@ optimizer, or NULL.}
 \item{wmat}{Matrix containing the weight estimates from each repeated holdout WQS model.}
 }
 \description{
-Fits Weighted Quantile Sum (WQS) regression, a random subset inplementation of WQS and a repeated holdout validation WQS for continuous, binomial, multinomial, poisson, quasi-poisson and negative binomial outcomes.
+Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) \doi{10.1007/s13253-014-0180-3}),
+a random subset implementation of WQS (Curtin et al. (2019) \doi{10.1080/03610918.2019.1577971}) and
+a repeated holdout validation WQS (Tanner et al. (2019) \doi{10.1016/j.mex.2019.11.008}) for continuous,
+binomial, multinomial, poisson, quasi-poisson and negative binomial outcomes.
 }
 \details{
 \code{gWQS} uses the \code{glm} function in the \bold{stats} package to fit the linear, logistic,
@@ -204,6 +207,13 @@ chemical mixtures and cancer risk. Cancer Informatics,
 Brunst KJ, Sanchez Guerra M, Gennings C, et al. Maternal Lifetime Stress and Prenatal Psychological
 Functioning and Decreased Placental Mitochondrial DNA Copy Number in the PRISM Study.
 Am J Epidemiol. 2017;186(11):1227-1236. \doi{10.1093/aje/kwx183}.\cr
+
+Curtin P, Kellogg J, Cech N, Gennings C. 2019. A random subset implementation of weighted quantile
+sum (WQSRS) regression for analysis of high-dimensional mixtures, Communications in Statistics -
+Simulation and Computation. \doi{10.1080/03610918.2019.1577971}.\cr
+
+Tanner EM, Bornehag CG, Gennings C. Repeated holdout validation for weighted quantile sum regression.
+MethodsX. 2019 Nov 22;6:2855-2860. \doi{10.1016/j.mex.2019.11.008}.\cr
 }
 \seealso{
 \link[stats]{glm}, \link[MASS]{glm.nb}, \link[nnet]{multinom}, \link[pscl]{zeroinfl}.

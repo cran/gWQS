@@ -1,6 +1,9 @@
 #' Fitting Weighted Quantile Sum regression models
 #'
-#' Fits Weighted Quantile Sum (WQS) regression, a random subset inplementation of WQS and a repeated holdout validation WQS for continuous, binomial, multinomial, poisson, quasi-poisson and negative binomial outcomes.
+#' Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) \doi{10.1007/s13253-014-0180-3}),
+#' a random subset implementation of WQS (Curtin et al. (2019) \doi{10.1080/03610918.2019.1577971}) and
+#' a repeated holdout validation WQS (Tanner et al. (2019) \doi{10.1016/j.mex.2019.11.008}) for continuous,
+#' binomial, multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
 #'
 #' @param formula An object of class \code{formula} specifying the relationship to be tested. The \code{wqs}
 #' term must be included in \code{formula}, e.g. \code{y ~ wqs + ...}. To test for an interaction term with
@@ -130,6 +133,13 @@
 #' Brunst KJ, Sanchez Guerra M, Gennings C, et al. Maternal Lifetime Stress and Prenatal Psychological
 #' Functioning and Decreased Placental Mitochondrial DNA Copy Number in the PRISM Study.
 #' Am J Epidemiol. 2017;186(11):1227-1236. \doi{10.1093/aje/kwx183}.\cr
+#'
+#' Curtin P, Kellogg J, Cech N, Gennings C. 2019. A random subset implementation of weighted quantile
+#' sum (WQSRS) regression for analysis of high-dimensional mixtures, Communications in Statistics -
+#' Simulation and Computation. \doi{10.1080/03610918.2019.1577971}.\cr
+#'
+#' Tanner EM, Bornehag CG, Gennings C. Repeated holdout validation for weighted quantile sum regression.
+#' MethodsX. 2019 Nov 22;6:2855-2860. \doi{10.1016/j.mex.2019.11.008}.\cr
 #'
 #' @seealso \link[stats]{glm}, \link[MASS]{glm.nb}, \link[nnet]{multinom}, \link[pscl]{zeroinfl}.
 #'
@@ -454,9 +464,9 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
       if(b1_pos[i]) w_t = apply(bres[[i]][bres[[i]]$b1 > 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[[i]][bres[[i]]$b1 > 0 & conv == 0, "stat"]))
       else if(!b1_pos[i]) w_t = apply(bres[[i]][bres[[i]]$b1 < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[[i]][bres[[i]]$b1 < 0 & conv == 0, "stat"]))
       if (all(is.nan(w_t))){
-        w_t <- 1/apply(bres[[i]][, mix_name], 2, weighted.mean, signal(bres[[i]][, "stat"]))/sum(1/apply(bres[[i]][, mix_name], 2, weighted.mean, signal(bres[[i]][, "stat"])))
-        if(solve_dir_issue) warning(paste0("No models converged in ", ifelse(b1_pos[i], "positive", "negative"), " direction for ", strata_names[i], "\n"))
-        else stop(paste0("There are no ", ifelse(b1_pos[i], "positive", "negative"), " b1 in the bootstrapped models for ", strata_names[i], "\n"))
+        if(solve_dir_issue == "inverse") w_t <- 1/apply(bres[[i]][, mix_name], 2, weighted.mean, signal(bres[[i]][, "stat"]))/sum(1/apply(bres[[i]][, mix_name], 2, weighted.mean, signal(bres[[i]][, "stat"])))
+        else if(solve_dir_issue == "average") w_t <- rep(1/length(mix_name), length(mix_name))
+        if(!(solve_dir_issue %in% c("average", "inverse"))) stop(paste0("There are no ", ifelse(b1_pos[i], "positive", "negative"), " b1 in the bootstrapped models for ", strata_names[i], "\n"))
       }
       return(w_t)
     })
@@ -473,9 +483,9 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
       else mean_weight = apply(bres[bres$b1 < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 < 0 & conv == 0, "stat"]))
     }
     if(all(is.nan(mean_weight))){
-      mean_weight <- 1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"]))/sum(1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"])))
-      if(solve_dir_issue) warning(paste0("No models converged in ", ifelse(b1_pos, "positive", "negative"), " direction\n"))
-      else stop("There are no ", ifelse(b1_pos, "positive", "negative"), " b1 in the bootstrapped models\n")
+      if(solve_dir_issue == "inverse") mean_weight <- 1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"]))/sum(1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"])))
+      else if(solve_dir_issue == "average") mean_weight <- rep(1/length(mix_name), length(mix_name))
+      if(!(solve_dir_issue %in% c("average", "inverse"))) stop("There are no ", ifelse(b1_pos, "positive", "negative"), " b1 in the bootstrapped models\n")
     }
   }
 
