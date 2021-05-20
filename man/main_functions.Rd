@@ -12,7 +12,7 @@ gwqs(formula, data, na.action, weights, mix_name, stratified, valid_var, b = 100
              zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
              plan_strategy = "sequential",
              optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-             control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
+             control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
 
 gwqsrh(formula, data, na.action, weights, mix_name, stratified, valid_var, rh = 100,
                b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE, q = 4,
@@ -21,7 +21,7 @@ gwqsrh(formula, data, na.action, weights, mix_name, stratified, valid_var, rh = 
                zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
                plan_strategy = "sequential",
                optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-               control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
+               control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
 }
 \arguments{
 \item{formula}{An object of class \code{formula} specifying the relationship to be tested. The \code{wqs}
@@ -144,7 +144,7 @@ optimizer, or NULL.}
 Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) \doi{10.1007/s13253-014-0180-3}),
 a random subset implementation of WQS (Curtin et al. (2019) \doi{10.1080/03610918.2019.1577971}) and
 a repeated holdout validation WQS (Tanner et al. (2019) \doi{10.1016/j.mex.2019.11.008}) for continuous,
-binomial, multinomial, poisson, quasi-poisson and negative binomial outcomes.
+binomial, multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
 }
 \details{
 \code{gWQS} uses the \code{glm} function in the \bold{stats} package to fit the linear, logistic,

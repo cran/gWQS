@@ -185,6 +185,7 @@
 #' @importFrom ggrepel geom_text_repel
 #' @importFrom cowplot plot_grid
 #' @importFrom pscl zeroinfl
+#' @importFrom Matrix bdiag
 #'
 #' @export gwqs
 #' @rdname main_functions
@@ -196,7 +197,7 @@
 #'              zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
 #'              plan_strategy = "sequential",
 #'              optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-#'              control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
+#'              control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
 
 gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_var,
                  b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE, q = 4,
@@ -205,52 +206,49 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
                  zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
                  plan_strategy = "sequential",
                  optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-                 control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...){
+                 control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...){
 
-  wqsGaussBin <- function(initp, kw, bdtf, Y, offset, Q, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, wghts, stratified, b1_pos, b1_constr){
+  wqsGaussBin <- function(initp, kw, bXm, bY, boffset, bQ, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, bwghts, stratified, b1_pos, b1_constr){
 
     if(b1_constr) initp["wqs"] <- ifelse(b1_pos, abs(initp["wqs"]), -abs(initp["wqs"]))
     w <- initp[(kx + 1):(kx + kw)]^2
     w <- w/sum(w)
-    bdtf$wqs <- as.numeric(Q%*%w)
-    X <- model.matrix(formula, bdtf)
+    bXm[, "wqs"] <- as.numeric(bQ%*%w)
     b_covs <- initp[1:kx]
-    term <- as.numeric(X%*%b_covs) + offset
-    f = sum(family$dev.resids(y = Y, mu = family$linkinv(term), wt = wghts))
+    term <- as.numeric(bXm%*%b_covs) + boffset
+    f = sum(family$dev.resids(y = bY, mu = family$linkinv(term), wt = bwghts))
 
     return(f)
   }
 
-  wqsPoisson <- function(initp, kw, bdtf, Y, offset, Q, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, wghts, stratified, b1_pos, b1_constr){
+  wqsPoisson <- function(initp, kw, bXm, bY, boffset, bQ, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, bwghts, stratified, b1_pos, b1_constr){
 
     if(b1_constr) initp["wqs"] <- ifelse(b1_pos, abs(initp["wqs"]), -abs(initp["wqs"]))
     w <- initp[(kx + 1):(kx + kw)]^2
     w <- w/sum(w)
-    bdtf$wqs <- as.numeric(Q%*%w)
-    X <- model.matrix(formula, bdtf)
+    bXm[, "wqs"] <- as.numeric(bQ%*%w)
     b_covs <- initp[1:kx]
-    term <- as.numeric(X%*%b_covs) + offset
-    f = -sum(dpois(Y, lambda = exp(term), log = TRUE))
+    term <- as.numeric(bXm%*%b_covs) + boffset
+    f = -sum(dpois(bY, lambda = exp(term), log = TRUE))
 
     return(f)
   }
 
-  wqsNegBin <- function(initp, kw, bdtf, Y, offset, Q, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, wghts, stratified, b1_pos, b1_constr){
+  wqsNegBin <- function(initp, kw, bXm, bY, boffset, bQ, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, bwghts, stratified, b1_pos, b1_constr){
 
     if(b1_constr) initp["wqs"] <- ifelse(b1_pos, abs(initp["wqs"]), -abs(initp["wqs"]))
     w <- initp[(kx + 1):(kx + kw)]^2
     w <- w/sum(w)
-    bdtf$wqs <- as.numeric(Q%*%w)
-    X <- model.matrix(formula, bdtf)
+    bXm[, "wqs"] <- as.numeric(bQ%*%w)
     b_covs <- initp[1:kx]
     theta <- exp(initp[length(initp)])
-    term <- as.numeric(X%*%b_covs) + offset
-    f = -sum((suppressWarnings(dnbinom(Y, size = theta, mu = exp(term), log = TRUE)))*wghts)
+    term <- as.numeric(bXm%*%b_covs) + boffset
+    f = -sum((suppressWarnings(dnbinom(bY, size = theta, mu = exp(term), log = TRUE)))*bwghts)
 
     return(f)
   }
 
-  wqsMultinom <- function(initp, kw, bdtf, Y, offset, Q, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, wghts, stratified, b1_pos, b1_constr){
+  wqsMultinom <- function(initp, kw, bXm, bY, boffset, bQ, kx, Xnames, n_levels, level_names, wqsvars, family, zilink, zero_infl, formula, ff, bwghts, stratified, b1_pos, b1_constr){
 
     if(b1_constr){
       par_pos <- which(grepl("wqs", names(initp)))
@@ -258,19 +256,14 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
     }
     w <- matrix(initp[(kx + 1):length(initp)]^2, kw, n_levels-1)
     w <- apply(w, MARGIN = 2, FUN = function(i) i/sum(i))
-    bdtf[, wqsvars] <- Q%*%w
-    Xl = lapply(wqsvars, function(i){
-      fmi <- as.formula(gsub("wqs", i, format(formula)))
-      model.matrix(fmi, data = bdtf)
-    })
-    X = do.call("cbind", Xl)
+    bXm[, wqsvars] <- bQ%*%w
     b_covs = matrix(0, kx, n_levels-1)
     i = 1:(kx/(n_levels-1))
     for (j in 0:(n_levels-2)){
       b_covs[(kx/(n_levels-1))*j+i, j+1] = initp[(kx/(n_levels-1))*j+i]
     }
-    term = X%*%b_covs + offset
-    f = -sum((diag(Y%*%t(term)) - log(1 + rowSums(exp(term))))*wghts)
+    term = bXm%*%b_covs + boffset
+    f = -sum((diag(bY%*%t(term)) - log(1 + rowSums(exp(term))))*bwghts)
 
     return(f)
   }
@@ -346,6 +339,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
     mix_name = strtfd_out$mix_name
   }
   else stratified <- NULL
+  if(!is.null(l$stratified_rh)) stratified <- l$stratified_rh
 
   if(!is.null(seed) & !is.numeric(seed)) stop("seed must be numeric or NULL\n")
   if(!is.null(seed)){
@@ -362,22 +356,56 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
 
   if(is.null(n_vars)) n_vars = round(sqrt(length(mix_name)))
 
-  # parameters estimation and model fitting
-  m <- match(c("weights"), names(mc), 0)
-  if(m[1]) dtf$wghts <- wghts <- unlist(dtf[, weights, drop = FALSE])
-  else  dtf$wghts <- wghts <- rep(1, N)
-
   if (family$family %in% c("gaussian", "quasipoisson")) ts = "t"
   else if (family$family %in% c("binomial", "poisson", "multinomial", "negbin")) ts = "z"
 
   if(!is.numeric(b)) stop("'b' must be a number\n")
 
+  m <- match(c("weights"), names(mc), 0)
+  if(m[1]) dtf$wghts <- wghts <- unlist(dtf[, weights, drop = FALSE])
+  else  dtf$wghts <- wghts <- rep(1, N)
+
+  Xnames <- parnames(dtf, formula, NULL)
+  kx <- length(Xnames)
+  if(family$family == "multinomial"){
+    n_levels <- nlevels(eval(formula[[2]], envir = dtf))
+    if(n_levels == 0) stop("y must be of class factor when 'family = \"multinomial\"'\n")
+    level_names <- levels(eval(formula[[2]], envir = dtf))
+    Xnames <- c(sapply(level_names[-1], function(i) paste0(Xnames[1:kx], "_", i, "_vs_", level_names[1])))
+    kx <- kx*(n_levels-1)
+    wqsvars = Xnames[grepl("^wqs_", Xnames)]
+    dtf[, wqsvars] <- 0
+  }
+  else {n_levels <- ifelse(is.null(stratified), 2, nlevels(unlist(dtf[, stratified]))); level_names <- wqsvars <- NULL}
+  kw <- ncol(Q)
+  initp <- values.0(kw, Xnames, kx, n_levels, formula, ff, wghts, dtf, stratified, b1_pos, family, zilink, zero_infl)
+  mf <- model.frame(formula, dtf)
+  Y <- model.response(mf, "any")
+  if(family$family == "binomial" & any(class(Y) %in% c("factor", "character"))){
+    if(class(Y) == "character") Y = factor(Y)
+    Y <- as.numeric(Y != levels(Y)[1])
+  }
+  if(family$family == "multinomial") Y <- cbind(sapply(2:n_levels, function(i) ifelse(Y == level_names[i], 1, 0)))
+  offset <- model.offset(mf)
+  if(is.null(offset)) offset <- rep(0, nrow(dtf))
+
+  if(family$family == "multinomial"){
+    Xl = lapply(wqsvars, function(i){
+      fmi <- as.formula(gsub("wqs", i, format(formula)))
+      model.matrix(fmi, data = dtf)
+    })
+    Xm = do.call("cbind", Xl)
+  }
+  else Xm <- model.matrix(formula, dtf)
+
   plan(plan_strategy)
   if(control$trace) cat("start opt\n")
-  param <- future_lapply(X = 1:b, FUN = optim.f, objfn = objfn, dtf = dtf[rindex$it,], bQ = Q[rindex$it,],
+  param <- future_lapply(X = 1:b, FUN = optim.f, objfn = objfn, Y = if(family$family == "multinomial") Y[rindex$it,] else Y[rindex$it],
+                         Xm = Xm[rindex$it,], Q = Q[rindex$it,], offset = offset[rindex$it], wghts = wghts[rindex$it],
+                         initp = initp, n_levels = n_levels, level_names = level_names, wqsvars = wqsvars,
                          b1_pos = b1_pos, b1_constr = b1_constr, n_vars = n_vars, family = family, rs = rs,
-                         zilink = zilink, zero_infl = zero_infl, formula = formula, ff = ff, wghts = wghts[rindex$it],
-                         stratified = stratified, optim.method = optim.method, control = control, future.seed = fseed)
+                         zilink = zilink, zero_infl = zero_infl, formula = formula, ff = ff, kx = kx, kw = kw,
+                         Xnames = Xnames, stratified = stratified, b = b, optim.method = optim.method, control = control, future.seed = fseed)
 
   conv <- c(sapply(param, function(i) i$conv))
   counts <- c(sapply(param, function(i) i$counts))
@@ -403,25 +431,10 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   }
   else{
     wght_matrix <- do.call("rbind", lapply(param, function(i) i$par_opt))
-    if(zero_infl){
-      b1_count <- sapply(param, function(i) i$mfit$m_f$coefficients$count["wqs"])
-      se_count <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients$count["wqs", "Std. Error"])
-      stat_count <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients$count["wqs", paste0(ts, " value")])
-      p_val_count <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients$count["wqs", gsub("x", ts, "Pr(>|x|)")])
-      if("wqs" %in% names(param[[1]]$mfit$m_f$coefficients$zero)){
-        b1_zero <- sapply(param, function(i) i$mfit$m_f$coefficients$zero["wqs"])
-        se_zero <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients$zero["wqs", "Std. Error"])
-        stat_zero <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients$zero["wqs", paste0(ts, " value")])
-        p_val_zero <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients$zero["wqs", gsub("x", ts, "Pr(>|x|)")])
-      }
-      else b1_zero <- se_zero <- stat_zero <- p_val_zero <- NULL
-    }
-    else{
-      b1 <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", "Estimate"])
-      se <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", "Std. Error"])
-      stat <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", paste0(ts, " value")])
-      p_val <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", gsub("x", ts, "Pr(>|x|)")])
-    }
+    b1 <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", "Estimate"])
+    se <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", "Std. Error"])
+    stat <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", paste0(ts, " value")])
+    p_val <- sapply(param, function(i) summary(i$mfit$m_f)$coefficients["wqs", gsub("x", ts, "Pr(>|x|)")])
     n_levels <- 1
   }
 
@@ -441,20 +454,8 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
     names(bres) <- strata_names
   }
   else {
-    if(zero_infl){
-      if(is.null(b1_zero)){
-        bres <- as.data.frame(cbind(wght_matrix, b1_count, se_count, stat_count, p_val_count))
-        names(bres) <- c(colnames(Q), "b1_count", "Std_Error_count", "stat_count", "p_val_count")
-      }
-      else{
-        bres <- as.data.frame(cbind(wght_matrix, b1_count, se_count, stat_count, p_val_count, b1_zero, se_zero, stat_zero, p_val_zero))
-        names(bres) <- c(colnames(Q), "b1_count", "Std_Error_count", "stat_count", "p_val_count", "b1_zero", "Std_Error_zero", "stat_zero", "p_val_zero")
-      }
-    }
-    else{
-      bres <- as.data.frame(cbind(wght_matrix, b1, se, stat, p_val))
-      names(bres) <- c(colnames(Q), "b1", "Std_Error", "stat", "p_val")
-    }
+    bres <- as.data.frame(cbind(wght_matrix, b1, se, stat, p_val))
+    names(bres) <- c(colnames(Q), "b1", "Std_Error", "stat", "p_val")
     strata_names <- NULL
   }
 
@@ -474,14 +475,8 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   }
   else{
     if(rs) bres[mix_name][is.na(bres[mix_name])] <- 0
-    if(zero_infl){
-      if(b1_pos) mean_weight = apply(bres[bres$b1_count > 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1_count > 0 & conv == 0, "stat_count"]))
-      else mean_weight = apply(bres[bres$b1_count < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1_count < 0 & conv == 0, "stat_count"]))
-    }
-    else{
-      if(b1_pos) mean_weight = apply(bres[bres$b1 > 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 > 0 & conv == 0, "stat"]))
-      else mean_weight = apply(bres[bres$b1 < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 < 0 & conv == 0, "stat"]))
-    }
+    if(b1_pos) mean_weight = apply(bres[bres$b1 > 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 > 0 & conv == 0, "stat"]))
+    else mean_weight = apply(bres[bres$b1 < 0 & conv == 0, mix_name], 2, weighted.mean, signal(bres[bres$b1 < 0 & conv == 0, "stat"]))
     if(all(is.nan(mean_weight))){
       if(solve_dir_issue == "inverse") mean_weight <- 1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"]))/sum(1/apply(bres[, mix_name], 2, weighted.mean, signal(bres[, "stat"])))
       else if(solve_dir_issue == "average") mean_weight <- rep(1/length(mix_name), length(mix_name))
@@ -490,7 +485,9 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
   }
 
   # fit the final model with the estimated weights
-  wqs_model = model.fit(mean_weight, dtf[rindex$iv,], Q[rindex$iv,], family, zilink, formula, ff, wghts[rindex$iv], stratified, b1_pos, zero_infl)
+  wqs_model = model.fit(mean_weight, dtf[rindex$iv,], Q[rindex$iv,], if(family$family == "multinomial") Y[rindex$iv,] else Y[rindex$iv],
+                        family, zilink, formula, ff, wghts[rindex$iv], offset[rindex$iv], initp, Xnames, n_levels,
+                        level_names, wqsvars, stratified, b1_pos, zero_infl, kx, kw)
 
   if(all(grepl("wqs", attr(terms(formula), "term.labels")))) y_plot <- model.response(model.frame(formula, dtf[rindex$iv,]), "any")
   else{
@@ -527,14 +524,10 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
     Y <- cbind(sapply(2:n_levels, function(i) ifelse(Y == level_names[i], 1, 0)))
     colnames(Y) <- strata_names
     y_adj_wqs_df <- do.call("rbind", lapply(strata_names, function(i){
-      if(n_levels > 3) data.frame(level = i,
-                                  y = Y[rowSums(Y[, -which(colnames(Y)==i)]) == 0, i],
-                                  wqs = wqs_model$wqs[rowSums(Y[, -which(colnames(wqs_model$wqs)==i)]) == 0, i],
-                                  stringsAsFactors = TRUE)
-      else data.frame(level = i,
-                      y = Y[Y[, -which(colnames(Y)==i)] == 0, i],
-                      wqs = wqs_model$wqs[Y[, -which(colnames(wqs_model$wqs)==i)] == 0, i],
-                      stringsAsFactors = TRUE)
+      data.frame(level = i,
+                 y = Y[rowSums(Y[, -which(colnames(Y)==i), drop = F]) == 0, i],
+                 wqs = wqs_model$wqs[rowSums(Y[, -which(colnames(wqs_model$wqs)==i), drop = F]) == 0, i],
+                 stringsAsFactors = TRUE)
     }))
     dtf <- cbind(dtf, Q%*%mean_weight)
     names(dtf)[(ncol(dtf)-ncol(mean_weight)+1):ncol(dtf)] <- colnames(wqs_index)
@@ -573,7 +566,7 @@ gwqs <- function(formula, data, na.action, weights, mix_name, stratified, valid_
 #'                zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
 #'                plan_strategy = "sequential",
 #'                optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-#'                control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...)
+#'                control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
 
 gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, valid_var,
                    rh = 100, b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE,
@@ -582,7 +575,7 @@ gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, vali
                    zilink = c("logit", "probit", "cloglog", "cauchit", "log"),
                    seed = NULL, plan_strategy = "sequential",
                    optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-                   control = list(trace = FALSE, maxit = 1000, reltol = 1e-8), ...){
+                   control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...){
 
   if(is.character(family)){
     if(family %in% c("multinomial", "negbin")) family <- list(family = family)
@@ -638,6 +631,7 @@ gwqsrh <- function(formula, data, na.action, weights, mix_name, stratified, vali
   mc$data <- dtf
   mc$weights <- "wghts"
   mc$rh <- mc$seed <- mc$valid_var <- mc$stratified <- NULL
+  if(!is.null(stratified)) mc$stratified_rh <- stratified
   mc[which(names(mc)=="q")] <- list(NULL)
   mc$mix_name <- mix_name
   if(is.numeric(rh)) rh <- 1:rh
@@ -911,11 +905,11 @@ summary.gwqs <- function(object, ...){
     ans$call <- object$call
     ans$is.binomial <- FALSE
     ans$digits <- options()$digits
-    ans$coefficients <- matrix(object$fit$coefficients$Estimate, nrow = dim(object$fit$coefficients)[1]/2, byrow = T)
-    ans$standard.errors <- matrix(object$fit$coefficients$Standard_Error, nrow = dim(object$fit$coefficients)[1]/2, byrow = T)
-    rownames(ans$coefficients) <- rownames(ans$standard.errors) <- levels(unlist(object$data[, all.vars(object$formula)[1]]))[-1]
+    ans$coefficients <- matrix(object$fit$coefficients$Estimate, nrow = dim(object$fit$coefficients)[1]/2, byrow = F)
+    ans$standard.errors <- matrix(object$fit$coefficients$Standard_Error, nrow = dim(object$fit$coefficients)[1]/2, byrow = F)
+    colnames(ans$coefficients) <- colnames(ans$standard.errors) <- levels(unlist(object$data[, all.vars(object$formula)[1]]))[-1]
     object$data$wqs <- 0
-    colnames(ans$coefficients) <- colnames(ans$standard.errors) <- colnames(model.matrix(object$formula, object$data))
+    rownames(ans$coefficients) <- rownames(ans$standard.errors) <- colnames(model.matrix(object$formula, object$data))
     ans$AIC <- 2*dim(object$fit$coefficients)[1] + 2*(object$fit$nlm_out$minimum)
     ans$deviance <- 2*object$fit$nlm_out$minimum
   }

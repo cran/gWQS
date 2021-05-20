@@ -115,48 +115,30 @@ values.0 = function(kw, Xnames, kx, n_levels, formula, ff, wghts, bdtf, stratifi
 
 
 # optimization function to estimate the weights
-optim.f <- function(i, objfn, dtf, bQ, b1_pos, b1_constr, n_vars, family, rs, zilink, zero_infl, formula, ff, wghts, stratified, optim.method, control){
+optim.f <- function(i, objfn, Y, Xm, Q, offset, wghts, initp, n_levels, level_names, wqsvars, b1_pos, b1_constr,
+                    n_vars, family, rs, zilink, zero_infl, formula, ff, kx, kw, Xnames, stratified, b, optim.method, control){
 
   if(rs){
-    bindex <- 1:nrow(dtf)
-    slctd_vars <- sample(colnames(bQ), n_vars, replace=FALSE)
+    bindex <- 1:nrow(Xm)
+    slctd_vars <- sample(colnames(Q), n_vars, replace=FALSE)
+    initp <- initp[c(rep(T, ncol(Xm)), if(family$family == "multinomial") rep(colnames(Q) %in% slctd_vars, (n_levels-1)) else colnames(Q) %in% slctd_vars)]
+    kw <- length(slctd_vars)
   }
   else{
-    bindex <- sample(1:nrow(dtf), nrow(dtf), replace=TRUE)
-    slctd_vars <- colnames(bQ)
+    if(b == 1) bindex <- 1:nrow(Xm)
+    else bindex <- sample(1:nrow(Xm), nrow(Xm), replace=TRUE)
+    slctd_vars <- colnames(Q)
   }
-  bdtf <- dtf[bindex,]
-  bQ <- bQ[bindex, slctd_vars]
-  wghts <- wghts[bindex]
-  Xnames <- parnames(bdtf, formula, NULL)
-  kx <- length(Xnames)
-  if(family$family == "multinomial"){
-    n_levels <- nlevels(eval(formula[[2]], envir = bdtf))
-    if(n_levels == 0) stop("y must be of class factor when 'family = \"multinomial\"'\n")
-    level_names <- levels(eval(formula[[2]], envir = bdtf))
-    Xnames <- c(sapply(level_names[-1], function(i) paste0(Xnames[1:kx], "_", i, "_vs_", level_names[1])))
-    kx <- kx*(n_levels-1)
-    wqsvars = Xnames[grepl("^wqs_", Xnames)]
-    bdtf[, wqsvars] <- 0
-  }
-  else {n_levels <- ifelse(is.null(stratified), 2, nlevels(unlist(bdtf[, stratified]))); level_names <- wqsvars <- NULL}
-  kw <- dim(bQ)[2]
-  initp <- values.0(kw, Xnames, kx, n_levels, formula, ff, wghts, bdtf, stratified, b1_pos, family, zilink, zero_infl)
-  mf <- model.frame(formula, bdtf)
-  Y <- model.response(mf, "any")
-  if(family$family == "binomial" & class(Y) %in% c("factor", "character")){
-    if(class(Y) == "character") Y = factor(Y)
-    Y <- as.numeric(Y != levels(Y)[1])
-  }
-  if(family$family == "multinomial") Y <- cbind(sapply(2:n_levels, function(i) ifelse(Y == level_names[i], 1, 0)))
-  offset <- model.offset(mf)
-  if(is.null(offset)) offset <- 0
-
+  bXm <- Xm[bindex,]
+  bQ <- Q[bindex, slctd_vars]
+  bY <- if(family$family == "multinomial")  Y[bindex,] else Y[bindex]
+  bwghts <- wghts[bindex]
+  boffset <- offset[bindex]
   opt_res <- tryCatch(optim(par = initp, fn = objfn, method = optim.method, control = control,
-                            kw = kw, bdtf = bdtf, Y = Y, offset = offset, Q = bQ, kx = kx,
+                            kw = kw, bXm = bXm, bY = bY, boffset = boffset, bQ = bQ, kx = kx,
                             Xnames = Xnames, n_levels = n_levels, level_names = level_names,
                             wqsvars = wqsvars, family = family, zilink = zilink, zero_infl = zero_infl,
-                            formula = formula, ff = ff, wghts = wghts, stratified = stratified, b1_pos = b1_pos,
+                            formula = formula, ff = ff, bwghts = bwghts, stratified = stratified, b1_pos = b1_pos,
                             b1_constr = b1_constr), error = function(e) NULL)
 
   if(!is.null(opt_res)) {
@@ -178,8 +160,10 @@ optim.f <- function(i, objfn, dtf, bQ, b1_pos, b1_constr, n_vars, family, rs, zi
     else par_opt[is.infinite(par_opt)] <- 1/sum(is.infinite(par_opt))
     par_opt[!(is.infinite(par_opt))] <- 0
   }
-  mfit <- model.fit(w = par_opt, bdtf = bdtf, bQ = bQ, family = family, zilink = zilink, formula = formula, ff = ff,
-                      wghts = wghts, stratified = stratified, b1_pos = b1_pos, zero_infl = zero_infl)
+  mfit <- model.fit(w = par_opt, dt = bXm, bQ = bQ, Y = bY, family = family, zilink = zilink, formula = formula, ff = ff,
+                    wghts = bwghts, offset = boffset, initp = initp, Xnames = Xnames, n_levels = n_levels,
+                    level_names = level_names, wqsvars = wqsvars, stratified = stratified, b1_pos = b1_pos,
+                    zero_infl = zero_infl, kx = kx, kw = kw)
 
   out <- list(par_opt = par_opt, conv = conv, counts = counts, val = val, mex = mex, mfit = mfit, bindex = bindex, slctd_vars = slctd_vars)
   return(out)
@@ -187,43 +171,38 @@ optim.f <- function(i, objfn, dtf, bQ, b1_pos, b1_constr, n_vars, family, rs, zi
 
 
 # function that fit the wqs model
-model.fit <- function(w, bdtf, bQ, family, zilink, formula, ff, wghts, stratified, b1_pos, zero_infl){
+model.fit <- function(w, dt, bQ, Y, family, zilink, formula, ff, wghts, offset, initp, Xnames, n_levels, level_names,
+                      wqsvars, stratified, b1_pos, zero_infl, kx, kw){
+
+  if(is.matrix(dt)){
+    dtf <- as.data.frame(dt)
+    formula <- ff <- Y ~ 0 + .
+    zero_infl <- FALSE
+  }
+  else{
+    if(family$family == "multinomial"){
+      fm_l <- sapply(wqsvars, function(i) as.formula(gsub("wqs", i, format(formula))))
+      dtfl <- lapply(fm_l, function(i) model.matrix(i, data = dt))
+      dtf <- do.call("cbind", dtfl)
+    }
+    else dtf <- dt
+  }
 
   if (family$family == "multinomial"){
-    mf <- model.frame(formula, bdtf)
-    Y <- model.response(mf, "any")
-    n_levels <- nlevels(Y)
-    level_names <- levels(Y)
-    Y <- cbind(sapply(2:n_levels, function(i) ifelse(Y == level_names[i], 1, 0)))
-    offset <- model.offset(mf)
-    if(is.null(offset)) offset <- 0
-    Xnames <- parnames(bdtf, formula, NULL)
-    Xnames <- c(sapply(level_names[-1], function(i) paste0(Xnames[1:length(Xnames)], "_", i, "_vs_", level_names[1])))
-    kx <- length(Xnames)
-    kw <- dim(bQ)[2]
     w <- matrix(w, kw, n_levels-1)
-    wqsvars <- Xnames[grepl("^wqs_", Xnames)]
-    wqs <- bdtf[, wqsvars] <- bQ%*%w
+    wqs <- dtf[, wqsvars] <- bQ%*%w
     colnames(wqs) <- paste0(level_names[-1], "_vs_", level_names[1])
-
-    fm_l <- sapply(wqsvars, function(i) as.formula(gsub("wqs", i, format(formula))))
-    Xl <- lapply(fm_l, function(i) model.matrix(i, data = bdtf))
-    X <- do.call("cbind", Xl)
-    initp <- values.0(kw, Xnames, kx, n_levels, formula, ff, wghts, bdtf, stratified, b1_pos, family, zilink, zero_infl)
     initp <- initp[1:kx]
   }
-  else wqs <- bdtf$wqs <- as.numeric(bQ%*%w)
+  else wqs <- dtf[,"wqs"] <- as.numeric(bQ%*%w)
 
-  if(zero_infl) m_f <- zeroinfl(ff, bdtf, dist = family$family, link = zilink$name)
+  if(zero_infl) m_f <- zeroinfl(ff, dtf, dist = family$family, link = zilink$name)
   else{
     if(family$family == "multinomial") {
       LL <- function(p){
-        b_covs = matrix(0, kx, n_levels-1)
-        i = 1:(kx/(n_levels-1))
-        for (j in 0:(n_levels-2)){
-          b_covs[(kx/(n_levels-1))*j+i, j+1] = p[(kx/(n_levels-1))*j+i]
-        }
-        term = X%*%b_covs + offset
+        tmp <- lapply(1:(n_levels-1), function(i) as.matrix(p[((i-1)*kx/(n_levels-1)+1):(i*kx/(n_levels-1))]))
+        b_covs <- as.matrix(bdiag(tmp))
+        term = as.matrix(dtf)%*%b_covs + offset
         -sum((diag(Y%*%t(term)) - log(1 + rowSums(exp(term))))*wghts)
       }
       nlm_out = nlm(LL, initp, hessian = TRUE)
@@ -237,8 +216,8 @@ model.fit <- function(w, bdtf, bQ, family, zilink, formula, ff, wghts, stratifie
       m_f = list(nlm_out, coefficients)
       names(m_f) = c("nlm_out", "coefficients")
     }
-    else if(family$family == "negbin") m_f = glm.nb(formula, data = bdtf, weights = wghts)
-    else m_f = glm(formula, data = bdtf, family = family, weights = wghts)
+    else if(family$family == "negbin") m_f = glm.nb(formula, data = dtf, weights = wghts)
+    else m_f = glm(formula, data = dtf, family = family, weights = wghts)
   }
 
   mf_out = list(wqs = wqs, m_f = m_f)
