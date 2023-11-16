@@ -2,24 +2,39 @@
 % Please edit documentation in R/gwqs.R
 \name{gwqs}
 \alias{gwqs}
+\alias{gwqs_multinom}
 \alias{gwqsrh}
 \title{Fitting Weighted Quantile Sum regression models}
 \usage{
-gwqs(formula, data, na.action, weights, mix_name, stratified, valid_var, b = 100,
-             b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE, q = 4,
-             validation = 0.6, family = gaussian, signal = c("t2", "one", "abst", "expt"),
+gwqs(formula, data, na.action, weights, mix_name, stratified, rh = 1, b = 100,
+             b1_pos = TRUE, bint_cont_pos = NULL, bint_cat_pos = NULL, b_constr = FALSE,
+             zero_infl = FALSE, q = 4, validation = 0.6, validation_rows = NULL,
+             family = gaussian, signal = c("t2", "t3", "one", "abst", "expt"),
              rs = FALSE, n_vars = NULL,
              zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
-             plan_strategy = "sequential",
+             wp = NULL, wn = NULL, plan_strategy = "sequential", lambda = 0,
              optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
-             control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
+             control = list(trace = FALSE, maxit = 2000, reltol = 1e-9),
+             b1_constr = NULL, ...)
 
-gwqsrh(formula, data, na.action, weights, mix_name, stratified, valid_var, rh = 100,
-               b = 100, b1_pos = TRUE, b1_constr = FALSE, zero_infl = FALSE, q = 4,
-               validation = 0.6, family = gaussian,
-               signal = c("t2", "one", "abst", "expt"), rs = FALSE, n_vars = NULL,
+gwqs_multinom(formula, data, na.action, weights, mix_name, stratified, rh = 1, b = 100,
+                      b1_pos = c(TRUE, TRUE), b_constr = FALSE, q = 4,
+                      validation = 0.6, validation_rows = NULL,
+                      signal = c("t2", "t3", "one", "abst", "expt"),
+                      rs = FALSE, n_vars = NULL,
+                      zilink = c("logit", "probit", "cloglog", "cauchit", "log"),
+                      seed = NULL, wp = NULL, wn = NULL, plan_strategy = "sequential",
+                      lambda = 0, optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
+                      control = list(trace = FALSE, maxit = 2000, reltol = 1e-9),
+                      b1_constr = NULL, ...)
+
+gwqsrh(formula, data, na.action, weights, mix_name, stratified, rh = 1, b = 100,
+               b1_pos = TRUE, bint_cont_pos = NULL, bint_cat_pos = NULL, b_constr = FALSE,
+               zero_infl = FALSE, q = 4, validation = 0.6, validation_rows = NULL,
+               family = gaussian, signal = c("t2", "t3", "one", "abst", "expt"),
+               rs = FALSE, n_vars = NULL,
                zilink = c("logit", "probit", "cloglog", "cauchit", "log"), seed = NULL,
-               plan_strategy = "sequential",
+               wp = NULL, wn = NULL, plan_strategy = "sequential", lambda = 0,
                optim.method = c("BFGS", "Nelder-Mead", "CG", "SANN"),
                control = list(trace = FALSE, maxit = 2000, reltol = 1e-9), ...)
 }
@@ -33,27 +48,30 @@ a continuous variable \code{a} or for a quadratic term we can specify the \code{
 
 \item{na.action}{\code{\link[stats]{model.frame}}. \code{na.omit} is the default.}
 
-\item{weights}{An optional vector of weights to be used in the fitting process.
-Should be \code{NULL} or a numeric vector.}
+\item{weights}{An optional term containing the name of the variable in the dataset representing the weights
+to be used in the fitting process. Should be \code{NULL} or the variable name.}
 
 \item{mix_name}{A character vector listing the variables contributing to a mixture effect.}
 
 \item{stratified}{The character name of the variable for which you want to stratify for.
 It has to be a \code{factor}.}
 
-\item{valid_var}{A character value containing the name of the variable that identifies the validation
-and the training dataset. You previously need to create a variable in the dataset which is equal to 1
-for the observations you want to include in the validation dataset, equal to 0 for the observation
-you want to include in the training dataset (use 0 also for the validation dataset if you want to train and
-validate the model on the same data) and equal to 2 if you want to keep part of the data for the
-predictive model.}
+\item{rh}{Number of repeated holdout validations.}
 
-\item{b}{Number of bootstrap samples used in parameter estimation.}
+\item{b}{Number of bootstrap samples used in parameter estimation. No bootstrap will be performed if b = 1.}
 
 \item{b1_pos}{A logical value that determines whether weights are derived from models where the beta
-values were positive or negative.}
+values were positive (\code{TRUE}) or negative (\code{FALSE}).}
 
-\item{b1_constr}{A logial value that determines whether to apply positive (if \code{b1_pos = TRUE}) or
+\item{bint_cont_pos}{A logical value that determines whether weights are derived from models where the
+beta parameter of the interaction term between the WQS index and a continuous variable were
+positive (\code{TRUE}) or negative (\code{FALSE}).}
+
+\item{bint_cat_pos}{A logical value or a vector of logical values that determines whether weights are
+derived from models where the slopes of the WQS index for each level (other than the reference one)
+of the interacting categorical variable were positive (\code{TRUE}) or negative (\code{FALSE}).}
+
+\item{b_constr}{A logial value that determines whether to apply positive (if \code{b1_pos = TRUE}) or
 negative (if \code{b1_pos = FALSE}) constraints in the optimization function for the weight estimation.}
 
 \item{zero_infl}{A logical value (\code{TRUE} or \code{FALSE}) that allows to fit a zero inflated
@@ -66,10 +84,13 @@ the values of the mixture variables are taken (these must be standardized).}
 \item{validation}{Percentage of the dataset to be used to validate the model. If
 \code{validation = 0} then the test dataset is used as validation dataset too.}
 
+\item{validation_rows}{A list of a single (if rh=1) or multiple vectors containing the rows to be
+considered in the validation step. When "validation_rows=NULL" (default) the function randomly choose
+the observations to be considered in the validation step.}
+
 \item{family}{A character value that allows to decide for the glm: \code{gaussian} for linear regression,
-\code{binomial} for logistic regression \code{"multinomial"} for multinomial regression,
-\code{poisson} for Poisson regression, \code{quasipoisson} for quasi-Poisson regression,
-\code{"negbin"} for negative binomial regression.}
+\code{binomial} for logistic regression, \code{poisson} for Poisson regression,
+\code{quasipoisson} for quasi-Poisson regression, \code{"negbin"} for negative binomial regression.}
 
 \item{signal}{Character identifying the signal function to be used when the average weights
 are estimated. It can take values from \code{"one"} to apply the identity, \code{"abst"} to apply
@@ -78,7 +99,7 @@ the absolute value of the t-statistic, \code{"t2"} to apply the squared value of
 
 \item{rs}{A logic value. If \code{rs = FALSE} then the bootstrap implementation of WQS is performed.
 If \code{rs = TRUE} then the random subset implementation of WQS is applied (see the "Details" and the
-vignette for further infromation).}
+vignette for further information).}
 
 \item{n_vars}{The number of mixture components to be included at each random subset step.
 If \code{rs = TRUE} and \code{n_vars = NULL} then the square root of the number of elements
@@ -89,9 +110,16 @@ in the mixture is taken.}
 
 \item{seed}{An \code{integer} value to fix the seed, if it is equal to \code{NULL} no seed is chosen.}
 
+\item{wp, wn}{An optional set of starting weights for the positive (\code{wp}) and negative (\code{wn}) directions
+to be passed to the optimization function. The default is \code{wp = NULL, wn = NULL} to let the \code{gwqs} function
+set the starting values.}
+
 \item{plan_strategy}{A character value that allows to choose the evaluation strategies for the
 \code{plan} function. You can choose among "sequential", "transparent", "multisession", "multicore",
 "multiprocess", "cluster" and "remote" (see \code{\link[future]{plan}} help page for more details).}
+
+\item{lambda}{The value of the penalization term used to shrink towards 0 the weights that are not
+truly associated with the outcome (see the "Details" and the vignette for further information).}
 
 \item{optim.method}{A character identifying the method to be used by the \code{\link[stats]{optim}} function
 (you can choose among \code{"BFGS", "Nelder-Mead", "CG", "SANN"}, \code{"BFGS"} is the default).
@@ -99,9 +127,9 @@ See \code{\link[stats]{optim}} for details.}
 
 \item{control}{The control list of optimization parameters. See \code{\link[stats]{optim}} for details.}
 
-\item{...}{Additional arguments to be passed to the function}
+\item{b1_constr}{The argument is deprecated, use 'b_constr' instead.}
 
-\item{rh}{Number of repeated holdout validations. This option is only available for \code{gwqsrh} function.}
+\item{...}{Additional arguments to be passed to the function}
 }
 \value{
 \code{gwqs} return the results of the WQS regression as well as many other objects and datasets.
@@ -115,11 +143,11 @@ The summary function can be used to call and print fit data (not for multinomial
 \item{bres}{Matrix of estimated weights, mixture effect parameter estimates and the associated
 standard errors, statistics and p-values estimated for each bootstrap iteration.}
 \item{wqs}{Vector containing the wqs index for each subject.}
+\item{pwqs}{Vector containing the positive wqs index for each subject.}
+\item{nwqs}{Vector containing the negative wqs index for each subject.}
 \item{qi}{List of the cutoffs used to divide in quantiles the variables in the mixture}
 \item{bindex}{List of vectors containing the \code{rownames} of the subjects included in each
 bootstrap dataset.}
-\item{tindex}{Vector containing the rows used to estimate the weights in each bootstrap.}
-\item{vindex}{Vector containing the rows used to estimate the parameters of the final model.}
 \item{y_wqs_df}{\code{data.frame} containing the dependent variable values adjusted for the
 residuals of a fitted model adjusted for covariates (original values when \code{family = binomial}
 or \code{"multinomial"}) and the wqs index estimated values.}
@@ -131,6 +159,7 @@ or \code{"multinomial"}) and the wqs index estimated values.}
 \item{n_levels}{The number of levels of the of the dependent variable when a multinomial regression is ran.}
 \item{zero_infl}{If a zero inflated model was ran (\code{TRUE}) or not (\code{FALE})}
 \item{zilink}{The chosen link function when a zero inflated model was ran.}
+\item{dwqs}{A logical value whether two indices were included (\code{TRUE}) in the model or not (\code{FALSE}).}
 \item{levelnames}{The name of each level when a multinomial regression is ran.}
 \item{data}{The data used in the WQS analysis.}
 \item{objfn_values}{The vector of the b values of the objective function corresponding to the optima values}
@@ -139,12 +168,14 @@ optimizer, or NULL.}
 \item{gwqslist}{List of the output from the \code{rh} WQS models.}
 \item{coefmat}{Matrix containing the parameter estimates from each repeated holdout WQS model.}
 \item{wmat}{Matrix containing the weight estimates from each repeated holdout WQS model.}
+\item{rh}{The number of repeated holdout performed.}
 }
 \description{
 Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) \doi{10.1007/s13253-014-0180-3}),
-a random subset implementation of WQS (Curtin et al. (2019) \doi{10.1080/03610918.2019.1577971}) and
-a repeated holdout validation WQS (Tanner et al. (2019) \doi{10.1016/j.mex.2019.11.008}) for continuous,
-binomial, multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
+a random subset implementation of WQS (Curtin et al. (2019) \doi{10.1080/03610918.2019.1577971}),
+a repeated holdout validation WQS (Tanner et al. (2019) \doi{10.1016/j.mex.2019.11.008}) and a WQS with
+2 indices (Renzetti et al. (2023) \doi{10.3389/fpubh.2023.1289579}) for continuous, binomial,
+multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
 }
 \details{
 \code{gWQS} uses the \code{glm} function in the \bold{stats} package to fit the linear, logistic,
@@ -155,7 +186,7 @@ the \bold{stats} package was used to optimize the log-likelihood of the multinom
 The \code{\link[stats]{optim}} optimization function is used to estimate the weights at each
 bootstrap step.\cr
 
-The \code{seed} argument specifies a fixed seed through the \code{set.seed} function.\cr
+The \code{seed} argument specifies a fixed seed through the \code{\link[base]{set.seed}} function.\cr
 
 The \code{rs} term allows to choose the type of methodology between the bootstrap implementation
 (WQSBS) or the random subset implementation (WQSRS) of the WQS. The first method performs \code{b}
@@ -164,28 +195,21 @@ subset of the total predictor set. For further details please see the vignette
 ("How to use gWQS package") and the references below.
 }
 \examples{
-# we save the names of the mixture variables in the variable
-# "toxic_chems"
+# we save the names of the mixture variables in the variable "toxic_chems"
 toxic_chems = names(wqs_data)[1:34]
 
-# To run a linear model and save the results in the variable
-# "results". This linear model (family = gaussian) will
-# rank/standardize variables in deciles (q = 10), perform a
-# 40/60 split of the data for training/validation
-# (validation = 0.6), and estimate weights over 2 bootstrap
-# samples (b = 2; in practical applications at least 100
-# bootstraps should be used). Weights will be derived from
-# mixture effect parameters that are positive (b1_pos = TRUE).
-# A unique seed was specified (seed = 2016) so this model will
-# be reproducible, and plots describing the variable weights
-# and linear relationship will be generated as output
-# (plots = TRUE). In the end tables describing the weights
-# values and the model parameters with the respectively
-# statistics are generated in the plots window (tables = TRUE):
-results = gwqs(yLBX ~ wqs, mix_name = toxic_chems,
-               data = wqs_data, q = 10, validation = 0.6,
-               b = 2, b1_pos = TRUE, b1_constr = FALSE,
-               family = gaussian, seed = 2016)
+# To run a linear model and save the results in the variable "results". This linear model
+# (family = gaussian) will rank/standardize variables in quartiles (q = 4), perform a
+# 40/60 split of the data for training/validation (validation = 0.6), and estimate weights
+# over 2 bootstrap samples (b = 2; in practical applications at least 100 bootstraps
+# should be used). Weights will be derived from mixture effect parameters that are positive
+# (b1_pos = TRUE). A unique seed was specified (seed = 2016) so this model will be
+# reproducible, and plots describing the variable weights and linear relationship will be
+# generated as output (plots = TRUE). In the end tables describing the weights values and
+# the model parameters with the respectively statistics are generated in the plots window
+# (tables = TRUE):
+results = gwqs(yLBX ~ wqs, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
+               b = 2, b1_pos = TRUE, b_constr = FALSE, family = gaussian, seed = 2016)
 
 # to test the significance of the covariates
 summary(results)
@@ -196,24 +220,15 @@ Carrico C, Gennings C, Wheeler D, Factor-Litvak P. Characterization of a weighte
 regression for highly correlated data in a risk analysis setting. J Biol Agricul Environ Stat.
 2014:1-21. ISSN: 1085-7117. \doi{10.1007/s13253-014-0180-3}.\cr
 
-Czarnota J, Gennings C, Colt JS, De Roos AJ, Cerhan JR, Severson RK, Hartge P, Ward MH,
-Wheeler D. 2015. Analysis of environmental chemical mixtures and non-Hodgkin lymphoma risk in the
-NCI-SEER NHL study. Environmental Health Perspectives, \doi{10.1289/ehp.1408630}.\cr
-
-Czarnota J, Gennings C, Wheeler D. 2015. Assessment of weighted quantile sum regression for modeling
-chemical mixtures and cancer risk. Cancer Informatics,
-2015:14(S2) 159-171 \doi{10.4137/CIN.S17295}.\cr
-
-Brunst KJ, Sanchez Guerra M, Gennings C, et al. Maternal Lifetime Stress and Prenatal Psychological
-Functioning and Decreased Placental Mitochondrial DNA Copy Number in the PRISM Study.
-Am J Epidemiol. 2017;186(11):1227-1236. \doi{10.1093/aje/kwx183}.\cr
-
-Curtin P, Kellogg J, Cech N, Gennings C. 2019. A random subset implementation of weighted quantile
+Curtin P, Kellogg J, Cech N, Gennings C (2021). A random subset implementation of weighted quantile
 sum (WQSRS) regression for analysis of high-dimensional mixtures, Communications in Statistics -
-Simulation and Computation. \doi{10.1080/03610918.2019.1577971}.\cr
+Simulation and Computation, 50:4, 1119-1134. \doi{10.1080/03610918.2019.1577971}.\cr
 
 Tanner EM, Bornehag CG, Gennings C. Repeated holdout validation for weighted quantile sum regression.
-MethodsX. 2019 Nov 22;6:2855-2860. \doi{10.1016/j.mex.2019.11.008}.\cr
+MethodsX. 2019 Nov 22;6:2855-2860. \doi{10.1016/j.mex.2019.11.008}. PMID: 31871919; PMCID: PMC6911906.\cr
+
+Renzetti S, Gennings C and Calza S (2023) A weighted quantile sum regression with penalized weights
+and two indices. Front Public Health 11:1151821. \doi{10.3389/fpubh.2023.1151821}.\cr
 }
 \seealso{
 \link[stats]{glm}, \link[MASS]{glm.nb}, \link[nnet]{multinom}, \link[pscl]{zeroinfl}.

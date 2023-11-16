@@ -1,21 +1,26 @@
 Package: gWQS
 Type: Package
 Title: Generalized Weighted Quantile Sum Regression
-Version: 3.0.4
-Author: Stefano Renzetti, Paul Curtin, Allan C Just, Ghalib Bello, Chris Gennings
-Maintainer: Stefano Renzetti <stefano.renzetti88@gmail.com>
-Description: Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) <doi:10.1007/s13253-014-0180-3>), a random subset implementation of WQS (Curtin et al. (2019) <doi:10.1080/03610918.2019.1577971>) and a repeated holdout validation WQS (Tanner et al. (2019) <doi:10.1016/j.mex.2019.11.008>) for continuous, binomial, multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
-Imports: ggplot2, dplyr, stats, broom, rlist, MASS, reshape2, plotROC,
-        knitr, kableExtra, nnet, future, future.apply, pscl, ggrepel,
-        cowplot, Matrix
-Suggests: markdown
+Version: 3.0.5
+Authors@R: c(person(given = "Stefano", family = "Renzetti", email = "stefano.renzetti88@gmail.com", role = c("aut", "cre")), person(given = "Paul", family = "Curtin", role = "aut"), person(given = "Allan", family = "C Just", role = "ctb"), person(given = "Ghalib", family = "Bello", role = "ctb"), person(given = "Chris", family = "Gennings", role = "aut"))
+Description: Fits Weighted Quantile Sum (WQS) regression  (Carrico et al. (2014) <doi:10.1007/s13253-014-0180-3>), a random subset implementation of WQS (Curtin et al. (2019) <doi:10.1080/03610918.2019.1577971>), a repeated holdout validation WQS (Tanner et al. (2019) <doi:10.1016/j.mex.2019.11.008>) and a WQS with 2 indices (Renzetti et al. (2023) <doi:10.3389/fpubh.2023.1289579>) for continuous, binomial, multinomial, Poisson, quasi-Poisson and negative binomial outcomes.
 License: GPL (>= 2)
+Imports: ggplot2, stats, broom, rlist, MASS, reshape2, plotROC, knitr,
+        kableExtra, nnet, future, future.apply, pscl, ggrepel, cowplot,
+        Matrix, car, utils, bookdown
+Suggests: markdown
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.3
 VignetteBuilder: knitr
 Encoding: UTF-8
 NeedsCompilation: no
-Packaged: 2021-05-20 08:34:27 UTC; stefanorenzetti
+Packaged: 2023-11-16 17:41:15 UTC; stefanorenzetti
+Author: Stefano Renzetti [aut, cre],
+  Paul Curtin [aut],
+  Allan C Just [ctb],
+  Ghalib Bello [ctb],
+  Chris Gennings [aut]
+Maintainer: Stefano Renzetti <stefano.renzetti88@gmail.com>
 Depends: R (>= 3.5.0)
 Repository: CRAN
-Date/Publication: 2021-05-20 09:30:02 UTC
+Date/Publication: 2023-11-16 22:20:06 UTC

@@ -66,3 +66,29 @@
 #' @format A data frame with 500 rows and 68 variables
 "wqs_data"
 
+
+
+#' Measurement of 38 nutrients (NHANES dataset)
+#'
+#' We created the `tiwqs_data` dataset to show how apply the two-indices WQS (2iWQS).
+#' These data reflect 38 nutrients measured in 5960 subjects participating in the NHANES study
+#' (2011-2012, 2013-2014, 2015-2016 cycles). Nutrients were estimated from the dietary intake
+#' data that considered the types and amounts of foods and beverages consumed during the 24-hour
+#' period prior to the interview. Two interviews were performed: the first one was collected
+#' in-person while the second interview was collected by telephone 3 to 10 days later. In this
+#' study we averaged the two nutrients when both evaluations were considered as usual food
+#' consumption (only one measurement was included in the analysis if the other one was not usual
+#' while the observation was dropped if both evaluations were not usual) and we added the dietary
+#' supplement intake when applicable.
+#' Additionally, BMI as both a continuous variable (`bmxbmi`) and categorical variable (`bmi_cat`)
+#' was included as outcome variable.
+#' A total of 10 covariates can also be found in the dataset
+#'
+#' @docType data
+#'
+#' @usage data(tiwqs_data)
+#'
+#' @format A data frame with 5960 rows and 50 variables
+"tiwqs_data"
+
+

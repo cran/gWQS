@@ -2,84 +2,56 @@
 % Please edit documentation in R/gwqs.R
 \name{summary.gwqs}
 \alias{summary.gwqs}
-\alias{summary.gwqsrh}
 \alias{print.gwqs}
-\alias{print.gwqsrh}
 \alias{print.summary.gwqs}
-\alias{print.summary.gwqsrh}
 \alias{predict.gwqs}
-\alias{predict.gwqsrh}
 \alias{coef.gwqs}
-\alias{coef.gwqsrh}
 \alias{vcov.gwqs}
-\alias{vcov.gwqsrh}
 \alias{fitted.gwqs}
-\alias{fitted.gwqsrh}
 \alias{residuals.gwqs}
-\alias{residuals.gwqsrh}
 \title{Methods for gwqs objects}
 \usage{
-\method{summary}{gwqs}(object, ...)
-
-\method{summary}{gwqsrh}(object, sumtype = c("norm", "perc"), ...)
+\method{summary}{gwqs}(object, sumtype = c("norm", "perc"), ...)
 
 \method{print}{gwqs}(x, digits = max(3L, getOption("digits") - 3L), ...)
 
-\method{print}{gwqsrh}(x, digits = max(3L, getOption("digits") - 3L), ...)
-
 \method{print}{summary.gwqs}(x, digits = max(3L, getOption("digits") - 3L), ...)
-
-\method{print}{summary.gwqsrh}(x, digits = max(3L, getOption("digits") - 3L), ...)
 
 \method{predict}{gwqs}(
   object,
   newdata,
-  type = c("link", "response", "prob", "count", "zero", "class", "probs", "terms"),
-  ...
-)
-
-\method{predict}{gwqsrh}(
-  object,
-  newdata,
   sumtype = c("norm", "perc"),
   type = c("link", "response", "prob", "count", "zero", "class", "probs", "terms"),
   ...
 )
 
-\method{coef}{gwqs}(object, ...)
-
-\method{coef}{gwqsrh}(object, sumtype = c("norm", "perc"), ...)
+\method{coef}{gwqs}(object, sumtype = c("norm", "perc"), ...)
 
 \method{vcov}{gwqs}(object, model = c("full", "count", "zero"), ...)
 
-\method{vcov}{gwqsrh}(object, model = c("full", "count", "zero"), ...)
-
-\method{fitted}{gwqs}(object, type = c("prob", "response"), ...)
-
-\method{fitted}{gwqsrh}(object, sumtype = c("norm", "perc"), type = c("prob", "response"), ...)
-
-\method{residuals}{gwqs}(
+\method{fitted}{gwqs}(
   object,
-  type = c("deviance", "pearson", "working", "response", "partial"),
+  sumtype = c("norm", "perc"),
+  type = c("link", "response", "prob", "count", "zero", "class", "probs", "terms"),
   ...
 )
 
-\method{residuals}{gwqsrh}(
+\method{residuals}{gwqs}(
   object,
   sumtype = c("norm", "perc"),
-  type = c("pearson", "response"),
+  type = c("deviance", "pearson", "working", "response", "partial"),
   ...
 )
 }
 \arguments{
-\item{object, x}{An object of class "gwqs" as returned by \code{gwqs}.}
-
-\item{...}{Further arguments to be passed.}
+\item{object, x}{An object of class "gwqs" as returned by \link[gWQS]{gwqs}.}
 
 \item{sumtype}{Type of summary statistic to be used: "norm" takes the mean of the estimated parameters on the
 validation sets and the 95% CI assuming a normal distribution of the parameters, while "perc" uses the median
 as the parameters estimates and the 2.5, 97.5 percentiles as CI. This option is only available for objects of
 class \code{gwqsrh}.}
+
+\item{...}{Further arguments to be passed.}
 
 \item{digits}{The number of significant digits to use when printing.}
 
@@ -116,7 +88,7 @@ The methods for \link[stats]{coef} and \link[stats]{vcov} by default return a si
 coefficients (a matrix when family = "multinomial") and their associated covariance matrix, respectively.
 By setting the model argument, the estimates for the corresponding model components can be extracted.
 
-Both the \code{fitted} and \link[stats]{predict} methods can compute fitted responses. The latter
+Both the \link[stats]{fitted} and \link[stats]{predict} methods can compute fitted responses. The latter
 sets the default on the scale of the linear predictors; the alternative "response" is on the scale of the
 response variable. Thus for a default binomial model the default predictions are of log-odds
 (probabilities on logit scale) and type = "response" gives the predicted probabilities. Type can be equal
@@ -133,7 +105,7 @@ toxic_chems = names(wqs_data)[1:34]
 set.seed(1234)
 rws <- sample(1:500, 150)
 results = gwqs(yLBX ~ wqs, mix_name = toxic_chems, data = wqs_data[-rws,], q = 4, validation = 0.6,
-               b = 1, b1_pos = TRUE, b1_constr = FALSE, family = gaussian)
+               b = 2, b1_pos = TRUE, b_constr = FALSE, family = gaussian)
 
 # to test the significance of the covariates
 summary(results)

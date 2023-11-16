@@ -6,7 +6,7 @@
 \alias{gwqs_fitted_vs_resid}
 \alias{gwqs_levels_scatterplot}
 \alias{gwqs_ROC}
-\alias{gwqsrh_boxplot}
+\alias{gwqs_boxplot}
 \alias{gwqs_summary_tab}
 \alias{gwqs_weights_tab}
 \alias{selectdatavars}
@@ -23,7 +23,7 @@ gwqs_levels_scatterplot(object, ...)
 
 gwqs_ROC(object, newdata, sumtype = c("norm", "perc"), ...)
 
-gwqsrh_boxplot(object, tau, ...)
+gwqs_boxplot(object, tau, ...)
 
 gwqs_summary_tab(object, sumtype = c("norm", "perc"), ...)
 
@@ -34,12 +34,12 @@ selectdatavars(data, na.action, formula, mix_name, ...)
 gwqs_rank(data, mix_name, q)
 }
 \arguments{
-\item{object}{An object of class "gwqs" as returned by \code{gwqs}.}
+\item{object}{An object of class "gwqs" as returned by \link[gWQS]{gwqs}.}
 
 \item{tau}{A number identifying the cutoff for the significant weights. Is tau is missing then reciprocal of
 the number of elements in the mixture is considered. To avoid printing the threshold line set \code{tau = NULL}.}
 
-\item{...}{Further arguments to be passed to the function.}
+\item{...}{Further arguments to be passed.}
 
 \item{sumtype}{Type of summary statistic to be used: "norm" takes the mean of the estimated parameters on the
 validation sets and the 95% CI assuming a normal distribution of the parameters, while "perc" uses the median
@@ -72,7 +72,7 @@ Functions that allow to generate plots and tables helping in visualizing and sum
 }
 \details{
 The \code{gwqs_barplot}, \code{gwqs_scatterplot}, \code{gwqs_fitted_vs_resid}, \code{gwqs_levels_scatterplot},
-\code{gwqs_ROC} and \code{gwqsrh_boxplot} functions produce five figures through the \code{\link[ggplot2]{ggplot}} function.
+\code{gwqs_ROC} and \code{gwqs_boxplot} functions produce five figures through the \code{\link[ggplot2]{ggplot}} function.
 
 The \code{gwqs_summary_tab} and \code{gwqs_weights_tab} functions produce two tables in the viewr pane
 through the use of the \code{\link[knitr]{kable}} and \code{\link[kableExtra]{kable_styling}} functions.
@@ -80,8 +80,8 @@ through the use of the \code{\link[knitr]{kable}} and \code{\link[kableExtra]{ka
 The \code{gwqs_barplot}, \code{gwqs_scatterplot} plots are available for all family types while
 \code{gwqs_fitted_vs_resid} is not available when \code{family = binomial} or \code{"multinomial"}.
 \code{gwqs_levels_scatterplot} plot is only available when \code{family = "multinomial"} and \code{gwqs_ROC}
-when \code{family = binomial}. All these plots can also be applied to the objects of class \code{gwqsrh}.
-For these objects an additional plot is available through the function \code{gwqs_boxplot}.
+when \code{family = binomial}. The \code{gwqs_boxplot} can be used when the parameter \code{rh} within
+the \code{gwqs} function is set greater than 1.
 
 The \code{gwqs_rank} function allows to split the variables selected through the vector \code{mix_name}
 in quantiles (depending by the value assigned to \code{q}).
@@ -89,7 +89,7 @@ in quantiles (depending by the value assigned to \code{q}).
 \examples{
 toxic_chems = names(wqs_data)[1:34]
 results = gwqs(yLBX ~ wqs, mix_name = toxic_chems, data = wqs_data, q = 4, validation = 0.6,
-               b = 1, b1_pos = TRUE, b1_constr = FALSE, family = gaussian)
+               b = 2, b1_pos = TRUE, b_constr = FALSE, family = gaussian)
 
 # barplot
 gwqs_barplot(results)
